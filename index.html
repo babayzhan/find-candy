@@ -143,11 +143,11 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   content:"";width:5px;height:12px;border-radius:3px;background:var(--accent);
 }
 
-.mode-row{display:flex;gap:8px}
+.mode-row{display:flex;gap:6px}
 .mode-card{
-  flex:1;
+  flex:1;min-width:0;
   display:flex;flex-direction:column;align-items:center;gap:1px;
-  padding:11px 6px 9px;
+  padding:11px 4px 9px;
   border-radius:18px;
   background:#fff;
   border:2.5px solid transparent;
@@ -314,6 +314,132 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   text-shadow:0 1px 0 rgba(255,255,255,.7);
 }
 .status.flash{animation:statusIn .32s ease}
+
+/* ---------- 4.5 连连看棋盘 ----------
+   用 CSS 变量算格子尺寸：棋盘宽度固定，格子随行列数自适应
+   padding 留一格空白，路线可以从棋盘外绕行                        */
+.link-wrap{
+  position:relative;
+  width:100%;max-width:500px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.link-board{
+  position:relative;
+  --rows:4;
+  --cols:4;
+  --pad:1;
+  --cell:60px;
+  display:grid;
+  grid-template-columns:repeat(var(--cols), var(--cell));
+  grid-template-rows:repeat(var(--rows), var(--cell));
+  gap:var(--cell-gap,4px);
+  /* 四周各留一格给绕行路线 */
+  padding:calc(var(--cell) * var(--pad) / 2);
+  touch-action:manipulation;
+}
+.link-tile{
+  position:relative;
+  border-radius:12px;
+  background:linear-gradient(162deg,#fff,#FDFAFF);
+  border:2px solid #fff;
+  box-shadow:0 3px 8px rgba(120,90,140,.14), inset 0 -3px 0 rgba(120,90,140,.05);
+  display:grid;place-items:center;
+  font-size:var(--glyph,26px);
+  line-height:1;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .2s ease, opacity .2s ease;
+  will-change:transform;
+  animation:cardIn .3s cubic-bezier(.2,.9,.3,1) backwards;
+}
+.link-tile:active{transform:scale(.94)}
+.link-tile.sel{
+  border-color:var(--accent);
+  background:linear-gradient(162deg,#fff,var(--accent-soft));
+  box-shadow:0 0 0 2.5px var(--accent), 0 4px 12px rgba(217,79,107,.22);
+  transform:scale(1.04);
+}
+.link-tile.hintpulse{animation:linkHint 1s ease-in-out infinite}
+.link-tile.gone{
+  opacity:0;transform:scale(.4) rotate(12deg);
+  pointer-events:none;
+  border-color:transparent;
+  box-shadow:none;
+}
+.link-tile.dead{visibility:hidden;pointer-events:none}
+
+/* 连线画布盖在棋盘上，留出绕行区 */
+.link-canvas{
+  position:absolute;
+  left:0;top:0;
+  width:100%;height:100%;
+  pointer-events:none;
+  z-index:5;
+}
+.link-path{
+  fill:none;
+  stroke:var(--accent);
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  filter:drop-shadow(0 0 6px rgba(217,79,107,.55));
+}
+.link-dot{fill:var(--accent-deep)}
+
+/* 倒计时 / 连击 */
+.link-hud{
+  display:flex;align-items:center;gap:8px;
+  width:100%;max-width:500px;
+  margin:6px auto 0;
+}
+.link-bar{
+  flex:1;height:9px;border-radius:99px;overflow:hidden;
+  background:rgba(255,255,255,.85);
+  box-shadow:inset 0 1px 3px rgba(120,90,140,.16);
+}
+.link-bar i{
+  display:block;height:100%;width:100%;
+  border-radius:99px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent));
+  transition:width .25s linear, background .3s ease;
+}
+.link-bar.low i{background:linear-gradient(90deg,#FFC46B,#F26D6D)}
+.link-clock{
+  flex:none;min-width:52px;text-align:right;
+  font-size:13px;font-weight:900;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.link-clock.low{color:#E24B4A}
+.combo-badge{
+  position:absolute;
+  left:50%;top:36%;
+  transform:translate(-50%,-50%) scale(.6);
+  font-size:20px;font-weight:900;
+  color:var(--accent-deep);
+  text-shadow:0 2px 0 #fff,0 4px 10px rgba(217,79,107,.35);
+  opacity:0;pointer-events:none;z-index:8;
+  white-space:nowrap;
+}
+.combo-badge.pop{animation:comboPop .8s cubic-bezier(.2,1.4,.4,1) forwards}
+
+@keyframes linkHint{
+  0%,100%{box-shadow:0 3px 8px rgba(120,90,140,.14), 0 0 0 0 rgba(255,204,80,.9)}
+  50%{box-shadow:0 3px 8px rgba(120,90,140,.14), 0 0 0 6px rgba(255,204,80,.25), 0 0 18px 4px rgba(255,204,80,.9)}
+}
+@keyframes comboPop{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}
+  25%{opacity:1;transform:translate(-50%,-62%) scale(1.12)}
+  70%{opacity:1;transform:translate(-50%,-78%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-105%) scale(.95)}
+}
+
+/* 暂停面板里的统计行 */
+.link-stats{
+  display:flex;justify-content:center;gap:14px;
+  margin:12px 0 0;
+  font-size:12px;color:var(--ink-2);
+}
+.link-stats b{display:block;font-size:16px;color:var(--ink);font-weight:900;margin-top:1px}
+.link-stats > div{text-align:center;min-width:56px}
 
 /* ---------- 5. 卡牌 ---------- */
 .card{
@@ -671,12 +797,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   background:var(--accent);
 }
 
-/* 粒子画布 */
-#fx{
-  position:fixed;inset:0;z-index:70;
-  pointer-events:none;
-}
-
 /* ---------- 7. 动画 ---------- */
 @keyframes float{
   0%,100%{transform:translateY(0) rotate(-3deg)}
@@ -823,8 +943,20 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     <div class="timer-track"><i id="timerFill"></i></div>
   </div>
 
+  <!-- 连连看专用：倒计时 + 得分 -->
+  <div class="link-hud hidden" id="linkHud">
+    <div class="link-bar" id="linkBar"><i id="linkBarFill"></i></div>
+    <div class="link-clock" id="linkClock">2:00</div>
+  </div>
+
   <div class="stage">
     <div class="board" id="board"></div>
+    <div class="link-wrap hidden" id="linkWrap">
+      <div class="link-board" id="linkBoard">
+        <canvas class="link-canvas" id="linkCanvas"></canvas>
+      </div>
+      <div class="combo-badge" id="comboBadge"></div>
+    </div>
     <div class="status" id="statusText" aria-live="polite">准备好啦～</div>
   </div>
 </section>
@@ -868,9 +1000,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 <!-- ==================== 复活 / 鼓励 ==================== -->
 <div class="overlay" id="rescueOverlay">
   <div class="sheet-card">
-    <div class="sheet-emoji">🌱</div>
-    <h2 class="sheet-title">没关系，再看一次</h2>
-    <p class="sheet-text">糖果躲起来啦～<br>这次我们少放几张牌，慢慢来。</p>
+    <div class="sheet-emoji" id="rescueEmoji">🌱</div>
+    <h2 class="sheet-title" id="rescueTitle">没关系，再看一次</h2>
+    <p class="sheet-text" id="rescueText">糖果躲起来啦～<br>这次我们少放几张牌，慢慢来。</p>
     <div class="sheet-btns">
       <button class="btn-primary" id="rescueRetry" type="button">再试一次 🔄</button>
       <button class="btn-ghost" id="rescueHome" type="button">先回首页</button>
@@ -883,9 +1015,15 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   <div class="sheet-card">
     <div class="sheet-emoji">⏸️</div>
     <h2 class="sheet-title">休息一下</h2>
-    <p class="sheet-text">准备好了就继续吧～</p>
+    <p class="sheet-text" id="pauseText">准备好了就继续吧～</p>
+    <div class="link-stats hidden" id="pauseStats">
+      <div>得分<b id="psScore">0</b></div>
+      <div>剩时<b id="psTime">0s</b></div>
+      <div>剩余<b id="psLeft">0 对</b></div>
+    </div>
     <div class="sheet-btns">
       <button class="btn-primary" id="pauseResume" type="button">继续玩 ▶</button>
+      <button class="btn-ghost hidden" id="pauseShuffle" type="button">重排一次 🔀</button>
       <button class="btn-ghost" id="pauseLevels" type="button">关卡列表</button>
       <button class="btn-ghost" id="pauseRestart" type="button">重新玩这一关</button>
       <button class="btn-ghost" id="pauseHome" type="button">回到首页</button>
@@ -941,8 +1079,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   <button class="toast-btn" id="toastBtn" type="button">好耶</button>
 </div>
 
-<canvas id="fx"></canvas>
-
 <script>
 /* ============================================================
  *  找到那颗糖 · 记忆乐园  v2.0
@@ -952,9 +1088,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
  *    2. 工具函数
  *    3. Save        —— localStorage 存档
  *    4. Sound       —— Web Audio 合成音效
- *    5. FX          —— Canvas 星星彩带粒子
- *    6. S           —— 运行时状态
- *    7. 渲染层      —— 首页 / HUD / 牌桌
+ *    5. S           —— 运行时状态
+ *    6. 渲染层      —— 首页 / HUD / 牌桌
  *    8. 流程层      —— 发牌 / 记忆 / 洗牌 / 判定 / 过关 / 复活
  *    9. 事件绑定 & 启动
  *
@@ -984,8 +1119,37 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
         name: '翻牌配对',
         icon: '🃏',
         desc: '翻开两张一样的牌'
+      },
+      link: {
+        name: '连连看',
+        icon: '🧩',
+        desc: '三条路线内连线消除'
       }
     },
+
+    /* ---------- 连连看参数 ----------
+       棋盘随关卡变大：4×4 → 4×5 → 5×6 → 6×6
+       每关开局都会做"可解性校验"，不合格就重新生成
+    ---------------------------------- */
+    link: {
+      sizes: [
+        { upTo: 5,   rows: 4, cols: 4 },  // 8 对
+        { upTo: 10,  rows: 4, cols: 5 },  // 10 对
+        { upTo: 20,  rows: 5, cols: 6 },  // 15 对
+        { upTo: 9999, rows: 6, cols: 6 }  // 18 对
+      ],
+      timeBase: 100,      // 基础秒数
+      timePerPair: 8,     // 每对额外秒数
+      timeMin: 95,
+      timeMax: 260,
+      scoreMatch: 10,     // 每对基础分
+      scoreCombo: 3,      // 连击每级加分
+      comboMax: 5,        // 连击上限
+      scoreTimeBonus: 2,  // 过关时剩余每秒折算
+      reshufflePerLevel: 3, // 手动重排次数
+      starRatio: [0.5, 0.25] // 剩时比例 ≥50% 三星，≥25% 两星
+    },
+
 
     /* ---------- 主题包 ----------
        unlockLevel：达到该关卡时解锁（每 10 关一个新主题）
@@ -1112,6 +1276,14 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       ['车库出发', '马路观察', '交通标志', '谁跑得快', '轮子转转', '洗牌高速路', '方向小达人', '交通指挥官', '环城旅行', '章节小考']
     ],
 
+    // 连连看自己的关卡名（节奏与前两种玩法不同，单独一套）
+    linkLevelNames: [
+      ['连起两条路', '小手连一连', '转个弯也行', '拐弯小能手', '连线加速', '拐角藏猫猫', '路线规划', '连线小高手', '思路清晰', '章节小考'],
+      ['森林连通', '动物对齐', '绕道去找', '穿过树梢', '迷雾连线', '拐三次也行', '路线大师', '连锁消除', '森林通路', '章节小考'],
+      ['数字连接', '成双成对', '数数连连', '上下左右', '快速连线', '绕一绕', '连击时刻', '计算路线', '数字高手', '章节小考'],
+      ['车道连通', '一路畅通', '绕行路线', '上下穿行', '高速连线', '拐角加速', '连击车道', '路线指挥', '环城连线', '章节小考']
+    ],
+
     /* ---------- 生命值与容错 ---------- */
     lives: {
       max: 3,               // 初始 3 颗心
@@ -1168,6 +1340,15 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     { e: '🍭', t: '好棒呀！', s: '糖果都被你找到了！' },
     { e: '🎈', t: '成功啦！', s: '你记住了每一张牌的位置！' },
     { e: '🐘', t: '太厉害了！', s: '大象都夸你记性好！' }
+  ];
+
+  // 连连看专属鼓励语（前两种玩法偏"记忆"，这里偏"路线/眼力"）
+  const LINK_PRAISE = [
+    { e: '🎉', t: '全连上啦！', s: '路线找得又准又快！' },
+    { e: '🏆', t: '太棒了！', s: '拐几个弯都难不倒你！' },
+    { e: '🌟', t: '真厉害！', s: '眼睛一亮就找到啦！' },
+    { e: '🎈', t: '成功啦！', s: '小脑瓜转得可真快！' },
+    { e: '🧩', t: '好厉害！', s: '你把整盘都清空啦！' }
   ];
 
   /* ==========================================================
@@ -1610,7 +1791,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
   // 关卡名称：按关卡号固定，循环使用章节名池
   function levelName(level) {
-    const pool = CONFIG.levelNames[(chapterOf(level) - 1) % CONFIG.levelNames.length];
+    const pool = (S.mode === 'link' ? CONFIG.linkLevelNames : CONFIG.levelNames)
+      [(chapterOf(level) - 1) % CONFIG.levelNames.length];
     return pool[(level - 1) % CONFIG.levelsPerChapter];
   }
 
@@ -1763,129 +1945,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     }
   };
 
-  /* ==========================================================
-   * 5. 粒子系统（全屏星星 / 彩带）
-   * ========================================================== */
-  const FX = {
-    cv: null, ctx: null, parts: [], raf: 0, w: 0, h: 0, last: 0,
-    EMOJI: ['⭐', '✨', '🌟', '💫', '🎉'],
-    COLORS: ['#FF8FA3', '#FFC46B', '#7FD6B0', '#8FBEFF', '#C6A8FF', '#FFE066'],
-
-    init() {
-      this.cv = $('fx');
-      this.ctx = this.cv.getContext('2d');
-      this.resize();
-      window.addEventListener('resize', () => this.resize());
-    },
-
-    resize() {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      this.w = window.innerWidth;
-      this.h = window.innerHeight;
-      this.cv.width = Math.floor(this.w * dpr);
-      this.cv.height = Math.floor(this.h * dpr);
-      this.cv.style.width = this.w + 'px';
-      this.cv.style.height = this.h + 'px';
-      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    },
-
-    /* 从某点爆开（答对时） */
-    burst(x, y, n, emojis) {
-      n = n || 22;
-      emojis = emojis || this.EMOJI;
-      for (let i = 0; i < n; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const sp = 110 + Math.random() * 270;
-        this.parts.push({
-          x: x, y: y,
-          vx: Math.cos(a) * sp,
-          vy: Math.sin(a) * sp - 90,
-          g: 620, drag: 0.995,
-          rot: Math.random() * 6.28,
-          vr: (Math.random() - 0.5) * 12,
-          size: 12 + Math.random() * 14,
-          life: 1, ttl: 0.85 + Math.random() * 0.55,
-          kind: 'emoji', text: pick(emojis)
-        });
-      }
-      this.start();
-    },
-
-    /* 全屏下落（过关时） */
-    rain(n) {
-      n = n || 70;
-      for (let i = 0; i < n; i++) {
-        const ribbon = Math.random() < 0.55;
-        this.parts.push({
-          x: Math.random() * this.w,
-          y: -30 - Math.random() * 220,
-          vx: (Math.random() - 0.5) * 70,
-          vy: 90 + Math.random() * 150,
-          g: 260, drag: 0.999,
-          rot: Math.random() * 6.28,
-          vr: (Math.random() - 0.5) * 9,
-          size: ribbon ? 8 + Math.random() * 8 : 14 + Math.random() * 14,
-          h: ribbon ? 6 + Math.random() * 6 : 0,
-          color: pick(this.COLORS),
-          life: 1, ttl: 3.2 + Math.random() * 1.8,
-          kind: ribbon ? 'ribbon' : 'emoji',
-          text: pick(this.EMOJI),
-          sway: Math.random() * 6.28
-        });
-      }
-      this.start();
-    },
-
-    start() {
-      if (this.raf) return;
-      this.last = performance.now();
-      this.raf = requestAnimationFrame((t) => this.tick(t));
-    },
-
-    tick(now) {
-      const dt = Math.min(0.05, (now - this.last) / 1000);
-      this.last = now;
-      const ctx = this.ctx;
-      ctx.clearRect(0, 0, this.w, this.h);
-
-      for (let i = this.parts.length - 1; i >= 0; i--) {
-        const p = this.parts[i];
-        p.life -= dt / p.ttl;
-        if (p.life <= 0) { this.parts.splice(i, 1); continue; }
-
-        p.vy += p.g * dt;
-        p.vx *= p.drag;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.rot += p.vr * dt;
-        if (p.kind === 'emoji') p.sway = (p.sway || 0) + dt * 2;
-
-        if (p.y > this.h + 80) { this.parts.splice(i, 1); continue; }
-
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, p.life * 1.6);
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        if (p.kind === 'emoji') {
-          ctx.font = p.size + 'px "Apple Color Emoji","Segoe UI Emoji",serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(p.text, 0, 0);
-        } else {
-          ctx.fillStyle = p.color;
-          ctx.fillRect(-p.size / 2, -p.h / 2, p.size, p.h);
-        }
-        ctx.restore();
-      }
-
-      if (this.parts.length) {
-        this.raf = requestAnimationFrame((t) => this.tick(t));
-      } else {
-        this.raf = 0;
-        ctx.clearRect(0, 0, this.w, this.h);
-      }
-    }
-  };
+  /* 命中反馈只保留局部 CSS 动画、连线和音效。
+     已移除全屏 Canvas 粒子：中低端设备绘制彩色 Emoji 粒子时容易掉帧，
+     且与现有的卡片弹跳、消除缩放、星级弹窗反馈重复。 */
 
   /* ==========================================================
    * 6. 运行时状态
@@ -1911,7 +1973,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     uid: 0,
     hintTimer: 0,
     toastTimer: 0,
-    resetArmed: false
+    resetArmed: false,
+    linkBonusTime: 0   // 连连看重来时额外补的秒数（失败越多给得越多）
   };
 
   /* 常用 DOM */
@@ -2014,12 +2077,22 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     const start = (c - 1) * CONFIG.levelsPerChapter + 1;
     const end = start + CONFIG.levelsPerChapter - 1;
-    const cardA = difficulty(start).cards;
-    const cardB = difficulty(end).cards;
+    // 连连看显示棋盘规模，其余玩法显示牌数
+    let sizeText;
+    if (S.mode === 'link') {
+      const sA = Link.config(start);
+      const sB = Link.config(end);
+      sizeText = sA.rows === sB.rows && sA.cols === sB.cols
+        ? (sA.rows + '×' + sA.cols + ' 棋盘')
+        : (sA.rows + '×' + sA.cols + ' → ' + sB.rows + '×' + sB.cols);
+    } else {
+      const cardA = difficulty(start).cards;
+      const cardB = difficulty(end).cards;
+      sizeText = cardA === cardB ? cardA + ' 张牌' : cardA + '-' + cardB + ' 张牌';
+    }
 
     $('chapTitle').textContent = '第 ' + c + ' 章' + (chapterStarSum(c) >= CONFIG.levelsPerChapter * 3 ? ' 🏆' : '');
-    $('chapSub').textContent = '第 ' + start + '-' + end + ' 关 · ' +
-      (cardA === cardB ? cardA + ' 张牌' : cardA + '-' + cardB + ' 张牌');
+    $('chapSub').textContent = '第 ' + start + '-' + end + ' 关 · ' + sizeText;
     $('chapPrev').disabled = c <= 1;
     $('chapNext').disabled = c >= maxChap;
 
@@ -2084,17 +2157,19 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   function renderHUD() {
     const theme = currentTheme();
     hudLevelEl.textContent = '第 ' + S.level + ' 关';
-    hudThemeEl.textContent = theme.name + ' · ' + (S.mode === 'find' ? '找糖果' : '翻牌配对');
+    hudThemeEl.textContent = theme.name + ' · ' + CONFIG.modes[S.mode].name;
 
     if (S.mode === 'find') {
       targetChip.classList.remove('hidden');
       progressChip.classList.add('hidden');
       targetChip.innerHTML = '<span class="chip-label">找到</span>' +
         '<span class="chip-main">' + label(S.target) + '</span>';
-    } else {
+    } else if (S.mode === 'pair') {
       targetChip.classList.add('hidden');
       progressChip.classList.remove('hidden');
       updateProgress();
+    } else {
+      renderLinkExtraHUD();
     }
 
     muteBtn.textContent = Save.data.muted ? '🔇' : '🔊';
@@ -2107,6 +2182,13 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   }
 
   function renderHearts() {
+    // 连连看不消耗生命值，隐藏心形区域
+    if (S.mode === 'link') {
+      heartsEl.innerHTML = '';
+      heartsEl.classList.add('hidden');
+      return;
+    }
+    heartsEl.classList.remove('hidden');
     let html = '';
     for (let i = 0; i < CONFIG.lives.max; i++) {
       const on = i < S.hearts;
@@ -2292,6 +2374,16 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     hideOverlays();
 
+    // 连连看用独立棋盘，不参与发牌/洗牌流水线
+    if (S.mode === 'link') {
+      switchBoard('link');
+      renderHearts();
+      await linkStartLevel(token);   // 内部生成棋盘后再刷新 HUD
+      return;
+    }
+
+    switchBoard('card');
+
     const cards = dealCards();
     renderBoard(cards);
     renderHUD();
@@ -2303,6 +2395,33 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     if (S.mode === 'find') await findIntro(token);
     else await pairIntro(token);
+  }
+
+  // 在"卡牌棋盘"与"连连看棋盘"之间切换显示
+  function switchBoard(kind) {
+    const isLink = kind === 'link';
+    boardEl.classList.toggle('hidden', isLink);
+    $('linkWrap').classList.toggle('hidden', !isLink);
+    $('linkHud').classList.toggle('hidden', !isLink);
+    $('timer').classList.toggle('hidden', isLink);
+    if (!isLink) {
+      // 离开连连看时停止计时，避免后台继续跑
+      Link.running = false;
+      Link.paused = false;
+      if (Link.rafTimer) { cancelAnimationFrame(Link.rafTimer); Link.rafTimer = 0; }
+      const cv = $('linkCanvas');
+      if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+    }
+  }
+
+  // 连连看额外 HUD：剩余对数 + 重排次数
+  function renderLinkExtraHUD() {
+    targetChip.classList.remove('hidden');
+    targetChip.innerHTML = '<span class="chip-label">剩余</span>' +
+      '<span class="chip-main">' + Link.leftPairs + ' 对</span>';
+    progressChip.classList.remove('hidden');
+    progressChip.innerHTML = '<span class="chip-label">得分</span>' +
+      '<span class="chip-main">' + Link.score + '</span>';
   }
 
   /* ---------- 8.3 找糖果：记忆 → 盖牌 → 洗牌 ---------- */
@@ -2343,6 +2462,677 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     setBusy(false);
     setStatus('翻开两张一样的牌吧！');
+  }
+
+  /* ==========================================================
+   * 8.5 连连看（Link）
+   * ----------------------------------------------------------
+   * 棋盘用 (rows+2) × (cols+2) 的"带外圈"坐标：
+   *   行列 0 与 rows+1 / cols+1 是虚拟空白边，允许路线从棋盘外绕行。
+   * 判定：两张同图案 → 找 ≤2 个拐点（= ≤3 条线段）的通路。
+   * 生成：成对填充后，反复用"可解性检测"验证；不合格就重排，
+   *       保证开局一定存在解，且每次消除后仍有解（否则自动重排）。
+   * ========================================================== */
+
+  // 去掉相邻重复点（0 长度线段）
+  function dedupePath(list) {
+    const out = [];
+    list.forEach((p) => {
+      const last = out[out.length - 1];
+      if (!last || last.r !== p.r || last.c !== p.c) out.push(p);
+    });
+    return out;
+  }
+
+  const Link = {
+    rows: 4,
+    cols: 5,
+    grid: [],          // [r][c] = item | null   (0..rows+1, 0..cols+1)
+    sel: null,         // { r, c } 已选中的格子
+    score: 0,
+    combo: 0,
+    leftPairs: 0,
+    timeLeft: 0,       // 秒（含小数）
+    timeTotal: 1,
+    reshuffles: 0,
+    running: false,
+    paused: false,
+    rafTimer: 0,
+    lastTick: 0,
+    busy: false,
+    hintTimer: 0,
+
+    /* ---------- 关卡参数 ---------- */
+    config(level) {
+      const L = CONFIG.link;
+      const size = L.sizes.find((s) => level <= s.upTo) || L.sizes[L.sizes.length - 1];
+      const pairs = Math.floor(size.rows * size.cols / 2);
+      const total = clamp(L.timeBase + pairs * L.timePerPair, L.timeMin, L.timeMax);
+      return { rows: size.rows, cols: size.cols, pairs: pairs, totalTime: total };
+    },
+
+    /* ---------- 建立空网格（含外圈） ---------- */
+    makeGrid(rows, cols) {
+      const g = [];
+      for (let r = 0; r < rows + 2; r++) {
+        const row = [];
+        for (let c = 0; c < cols + 2; c++) row.push(null);
+        g.push(row);
+      }
+      return g;
+    },
+
+    /* ---------- 生成一局，保证有解 ----------
+       策略：
+         1) 从主题随机取 N 种图案，成对洗牌后填入
+         2) 用 findAnyPair() 检测是否存在可消的一对
+         3) 没有就整体重排（最多 40 次），仍不行就重新洗牌
+    ---------------------------------------- */
+    build(level, theme) {
+      const cfg = this.config(level);
+      const pool = shuffle(theme.items);
+      const kindCount = Math.min(pool.length, Math.max(3, Math.ceil(cfg.pairs / 2)));
+      const kinds = pool.slice(0, kindCount);
+
+      // 32 格 → 16 对：先给每种图案分配对数，尽量均匀
+      const deck = [];
+      for (let i = 0; i < cfg.pairs; i++) {
+        const item = kinds[i % kindCount];
+        deck.push(item, item);
+      }
+
+      let grid = null;
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const shuffled = shuffle(deck);
+        grid = this.makeGrid(cfg.rows, cfg.cols);
+        let k = 0;
+        for (let r = 1; r <= cfg.rows; r++) {
+          for (let c = 1; c <= cfg.cols; c++) {
+            grid[r][c] = { item: shuffled[k++], dead: false };
+          }
+        }
+        this.grid = grid;
+        this.rows = cfg.rows;
+        this.cols = cfg.cols;
+        if (this.findAnyPair()) break;
+        // 极端情况：整桌一对一都连不上，继续重排
+        grid = null;
+      }
+
+      this.grid = grid || this.grid;
+      this.rows = cfg.rows;
+      this.cols = cfg.cols;
+      this.leftPairs = cfg.pairs;
+      this.totalTiles = cfg.pairs * 2;
+      return cfg;
+    },
+
+    /* ---------- 取格子（越界返回 undefined 表示"不可用"） ---------- */
+    cell(r, c) {
+      if (r < 0 || c < 0 || r >= this.rows + 2 || c >= this.cols + 2) return undefined;
+      return this.grid[r][c];
+    },
+
+    isEmpty(r, c) {
+      const cell = this.cell(r, c);
+      if (cell === undefined) return false;   // 出界不算空
+      return cell === null || cell.dead === true;
+    },
+
+    /* ---------- 直线连通：两点同行/同列且中间全空 ---------- */
+    lineClear(a, b) {
+      if (a.r === b.r) {
+        const [c1, c2] = a.c < b.c ? [a.c, b.c] : [b.c, a.c];
+        for (let c = c1 + 1; c < c2; c++) if (!this.isEmpty(a.r, c)) return false;
+        return true;
+      }
+      if (a.c === b.c) {
+        const [r1, r2] = a.r < b.r ? [a.r, b.r] : [b.r, a.r];
+        for (let r = r1 + 1; r < r2; r++) if (!this.isEmpty(r, a.c)) return false;
+        return true;
+      }
+      return false;
+    },
+
+    /* ---------- 核心：找 ≤2 拐点的路径 ----------
+       返回拐点数组（含起点与终点）；连不上返回 null。
+         0 拐：同行同列直连
+         1 拐：两个候选拐角 (a.r,b.c) / (b.r,a.c)
+         2 拐：沿 a 的行/列向外扫空点 m，再看 m→b 能否 1 拐
+    ---------------------------------------- */
+    findPath(a, b) {
+      // 0 拐
+      if (this.lineClear(a, b)) return [a, b];
+
+      // 1 拐
+      const corners = [{ r: a.r, c: b.c }, { r: b.r, c: a.c }];
+      for (let i = 0; i < corners.length; i++) {
+        const m = corners[i];
+        if (!this.isEmpty(m.r, m.c)) continue;
+        if (this.lineClear(a, m) && this.lineClear(m, b)) return [a, m, b];
+      }
+
+      // 2 拐：沿 a 的四个方向逐格推进，所有中间格都必须为空
+      const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+      for (let d = 0; d < dirs.length; d++) {
+        const dr = dirs[d][0];
+        const dc = dirs[d][1];
+        let r = a.r + dr;
+        let c = a.c + dc;
+
+        while (this.isEmpty(r, c)) {
+          const m = { r: r, c: c };
+          const mids = [{ r: m.r, c: b.c }, { r: b.r, c: m.c }];
+          for (let k = 0; k < mids.length; k++) {
+            const p = mids[k];
+            if (p.r === m.r && p.c === m.c) continue;      // 退化成 1 拐，已试过
+            if (!this.isEmpty(p.r, p.c)) continue;
+            if (this.lineClear(m, p) && this.lineClear(p, b)) {
+              return dedupePath([a, m, p, b]);
+            }
+          }
+          r += dr;
+          c += dc;
+        }
+      }
+      return null;
+    },
+
+    /* ---------- 全盘扫描：是否存在任意可消的对 ---------- */
+    findAnyPair() {
+      const tiles = [];
+      for (let r = 1; r <= this.rows; r++) {
+        for (let c = 1; c <= this.cols; c++) {
+          const cell = this.grid[r][c];
+          if (cell && !cell.dead) tiles.push({ r: r, c: c, item: cell.item });
+        }
+      }
+      for (let i = 0; i < tiles.length; i++) {
+        for (let j = i + 1; j < tiles.length; j++) {
+          if (tiles[i].item !== tiles[j].item) continue;
+          const p = this.findPath(tiles[i], tiles[j]);
+          if (p) return { a: tiles[i], b: tiles[j], path: p };
+        }
+      }
+      return null;
+    },
+
+    /* ---------- 手动/自动重排（保持剩余图案，重新布局） ---------- */
+    reshuffle(keepDead) {
+      const alive = [];
+      for (let r = 1; r <= this.rows; r++) {
+        for (let c = 1; c <= this.cols; c++) {
+          const cell = this.grid[r][c];
+          if (cell && !cell.dead) alive.push(cell.item);
+        }
+      }
+      if (alive.length < 2) return false;
+
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const shuffled = shuffle(alive);
+        const g = this.makeGrid(this.rows, this.cols);
+        let k = 0;
+        for (let r = 1; r <= this.rows; r++) {
+          for (let c = 1; c <= this.cols; c++) {
+            if (!keepDead || this.grid[r][c]) g[r][c] = { item: shuffled[k++], dead: false };
+          }
+        }
+        this.grid = g;
+        if (this.findAnyPair()) {
+          renderLinkBoard();
+          return true;
+        }
+      }
+      return false;
+    }
+  };
+
+  /* ==========================================================
+   * 8.5.1 连连看渲染
+   * ========================================================== */
+  function linkCellPx() {
+    const wrap = $('linkWrap');
+    const w = wrap ? (wrap.clientWidth || 340) : 340;
+    const cols = Link.cols;
+    const rows = Link.rows;
+    // 可用宽 = 棋盘宽 - 左右各半格 padding；高度留给棋盘
+    const stage = document.querySelector('.stage');
+    const availH = stage ? Math.max(180, stage.clientHeight - 40) : 380;
+    // 棋盘随行列数自适应；4×4 时格子放大一些，画面不空
+    const byW = (w - 6) / (cols + 1);          // +1 是两侧半格
+    const byH = availH / (rows + 1);
+    const cap = cols <= 4 ? 96 : 76;
+    return clamp(Math.floor(Math.min(byW, byH)), 26, cap);
+  }
+
+  function renderLinkBoard() {
+    const board = $('linkBoard');
+    const cell = linkCellPx();
+
+    board.style.setProperty('--rows', String(Link.rows));
+    board.style.setProperty('--cols', String(Link.cols));
+    board.style.setProperty('--cell', cell + 'px');
+    board.style.setProperty('--cell-gap', Math.max(2, Math.round(cell * 0.06)) + 'px');
+    board.style.setProperty('--glyph', Math.round(cell * 0.54) + 'px');
+
+    // 保留 canvas，重建方块
+    Array.prototype.slice.call(board.querySelectorAll('.link-tile')).forEach((el) => el.remove());
+
+    for (let r = 1; r <= Link.rows; r++) {
+      for (let c = 1; c <= Link.cols; c++) {
+        const cellData = Link.grid[r][c];
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'link-tile';
+        el.dataset.r = String(r);
+        el.dataset.c = String(c);
+        el.style.gridRow = String(r);
+        el.style.gridColumn = String(c);
+        el.style.animationDelay = ((r + c) * 18) + 'ms';
+
+        if (cellData && !cellData.dead) {
+          el.innerHTML = faceHTML(cellData.item) || ('<span class="glyph">' + cellData.item.g + '</span>');
+          el.setAttribute('aria-label', label(cellData.item));
+        } else {
+          el.classList.add('dead');
+          el.disabled = true;
+        }
+        board.appendChild(el);
+      }
+    }
+    resizeLinkCanvas();
+  }
+
+  function resizeLinkCanvas() {
+    const board = $('linkBoard');
+    const cv = $('linkCanvas');
+    if (!board || !cv) return;
+    const rect = board.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.max(1, Math.floor(rect.width * dpr));
+    cv.height = Math.max(1, Math.floor(rect.height * dpr));
+    cv.style.width = rect.width + 'px';
+    cv.style.height = rect.height + 'px';
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    Link.canvasRect = rect;
+  }
+
+  // 路径坐标（相对棋盘左上角）。
+  // 内层坐标取真实方块中心；虚拟外圈 0 / rows+1 / cols+1 映射到棋盘 padding 内的安全轨道。
+  // 旧实现按完整网格步长外推，外圈坐标会变成负数或超过 canvas，首末行/列的绕行线因此被裁掉。
+  function linkPoint(r, c) {
+    const board = $('linkBoard');
+    const base = board.getBoundingClientRect();
+    const style = getComputedStyle(board);
+    const cell = parseFloat(style.getPropertyValue('--cell')) || 40;
+    const gap = parseFloat(style.getPropertyValue('--cell-gap')) || 3;
+    const step = cell + gap;
+    const padLeft = parseFloat(style.paddingLeft) || cell / 2;
+    const padTop = parseFloat(style.paddingTop) || cell / 2;
+    // 给 4px 折线及圆端留出余量，避免贴着 canvas 边缘再次被裁剪。
+    const laneInset = Math.max(7, Math.min(12, Math.round(cell * 0.14)));
+
+    let x;
+    if (c <= 0) x = laneInset;
+    else if (c >= Link.cols + 1) x = base.width - laneInset;
+    else {
+      const colRef = board.querySelector('.link-tile[data-r="1"][data-c="' + c + '"]');
+      if (colRef && colRef.offsetWidth) {
+        const cr = colRef.getBoundingClientRect();
+        x = cr.left - base.left + cr.width / 2;
+      } else {
+        x = padLeft + (c - 1) * step + cell / 2;
+      }
+    }
+
+    let y;
+    if (r <= 0) y = laneInset;
+    else if (r >= Link.rows + 1) y = base.height - laneInset;
+    else {
+      const rowRef = board.querySelector('.link-tile[data-r="' + r + '"][data-c="1"]');
+      if (rowRef && rowRef.offsetHeight) {
+        const rr = rowRef.getBoundingClientRect();
+        y = rr.top - base.top + rr.height / 2;
+      } else {
+        y = padTop + (r - 1) * step + cell / 2;
+      }
+    }
+
+    return { x: x, y: y };
+  }
+
+  function drawLinkPath(path, done) {
+    const cv = $('linkCanvas');
+    if (!cv || !path || path.length < 2) return;
+    resizeLinkCanvas();
+    const ctx = cv.getContext('2d');
+    const pts = path.map((p) => linkPoint(p.r, p.c));
+    const start = performance.now();
+    const dur = 320;
+
+    function frame(now) {
+      const t = Math.min(1, (now - start) / dur);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // 逐段推进
+      const total = pts.length - 1;
+      const progress = t * total;
+
+      ctx.beginPath();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#FF8FA3';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.moveTo(pts[0].x, pts[0].y);
+
+      let drawn = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const seg = Math.min(1, Math.max(0, progress - (i - 1)));
+        if (seg <= 0) break;
+        const a = pts[i - 1];
+        const b = pts[i];
+        ctx.lineTo(a.x + (b.x - a.x) * seg, a.y + (b.y - a.y) * seg);
+        drawn += seg;
+      }
+      ctx.stroke();
+
+      // 端点小圆
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-deep') || '#D94F6B';
+      [pts[0], pts[pts.length - 1]].forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (t < 1) requestAnimationFrame(frame);
+      else {
+        setTimeout(() => {
+          ctx.clearRect(0, 0, cv.width, cv.height);
+          if (done) done();
+        }, 150);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ==========================================================
+   * 8.5.2 连连看流程
+   * ========================================================== */
+  function linkTimeText(sec) {
+    const s = Math.max(0, Math.ceil(sec));
+    const m = Math.floor(s / 60);
+    const ss = s % 60;
+    return m + ':' + String(ss).padStart(2, '0');
+  }
+
+  function renderLinkHUD() {
+    const ratio = Link.timeTotal ? clamp(Link.timeLeft / Link.timeTotal, 0, 1) : 0;
+    $('linkBarFill').style.width = (ratio * 100).toFixed(1) + '%';
+    $('linkBar').classList.toggle('low', ratio <= 0.25);
+    $('linkClock').textContent = linkTimeText(Link.timeLeft);
+    $('linkClock').classList.toggle('low', ratio <= 0.25);
+    progressChip.innerHTML = '<span class="chip-label">得分</span>' +
+      '<span class="chip-main">' + Link.score + '</span>';
+  }
+
+  function linkTick(now) {
+    if (!Link.running || Link.paused) { Link.rafTimer = 0; return; }
+    const dt = (now - Link.lastTick) / 1000;
+    Link.lastTick = now;
+    Link.timeLeft = Math.max(0, Link.timeLeft - dt);
+    renderLinkHUD();
+    if (Link.timeLeft <= 0) {
+      Link.running = false;
+      Link.rafTimer = 0;
+      linkLose();
+      return;
+    }
+    Link.rafTimer = requestAnimationFrame(linkTick);
+  }
+
+  function linkStartTimer() {
+    if (Link.rafTimer) cancelAnimationFrame(Link.rafTimer);
+    Link.lastTick = performance.now();
+    Link.running = true;
+    Link.rafTimer = requestAnimationFrame(linkTick);
+  }
+
+  function linkPauseTimer() {
+    Link.paused = true;
+    if (Link.rafTimer) { cancelAnimationFrame(Link.rafTimer); Link.rafTimer = 0; }
+  }
+
+  function linkResumeTimer() {
+    if (!Link.running) return;
+    Link.paused = false;
+    Link.lastTick = performance.now();
+    if (!Link.rafTimer) Link.rafTimer = requestAnimationFrame(linkTick);
+  }
+
+  /* ---------- 开局 ---------- */
+  async function linkStartLevel(token) {
+    const theme = currentTheme();
+    const cfg = Link.build(S.level, theme);
+
+    Link.score = 0;
+    Link.combo = 0;
+    Link.sel = null;
+    Link.busy = false;
+    // 失败重来会累积额外时间，越挫败越轻松
+    Link.timeTotal = cfg.totalTime + (S.linkBonusTime || 0);
+    Link.timeLeft = Link.timeTotal;
+    Link.reshuffles = CONFIG.link.reshufflePerLevel;
+    Link.running = false;
+    Link.paused = false;
+
+    renderLinkBoard();
+    renderLinkHUD();
+    renderHUD();          // 棋盘就绪后再刷新，避免"剩余对数"显示成旧值
+
+    setStatus('连起两个一样的图案吧～');
+    await sleep(400);
+    if (token !== S.runToken) return;
+
+    setBusy(false);
+    linkStartTimer();
+    setStatus('点两张一样的，路线不超过三个弯哦');
+  }
+
+  /* ---------- 点击方块 ---------- */
+  function linkTap(el) {
+    if (!Link.running || Link.paused || Link.busy) return;
+    const r = Number(el.dataset.r);
+    const c = Number(el.dataset.c);
+    const data = Link.grid[r][c];
+    if (!data || data.dead) return;
+
+    Sound.resume();
+    Sound.pop();
+
+    // 取消选中
+    if (Link.sel && Link.sel.r === r && Link.sel.c === c) {
+      el.classList.remove('sel');
+      Link.sel = null;
+      return;
+    }
+
+    // 第一张
+    if (!Link.sel) {
+      Link.sel = { r: r, c: c };
+      el.classList.add('sel');
+      setStatus(label(data.item) + '，再找一张一样的');
+      return;
+    }
+
+    // 第二张：图案不同 → 换选
+    const first = Link.sel;
+    const firstData = Link.grid[first.r][first.c];
+    if (!firstData || firstData.item !== data.item) {
+      const prevEl = linkTileEl(first.r, first.c);
+      if (prevEl) prevEl.classList.remove('sel');
+      Link.sel = { r: r, c: c };
+      el.classList.add('sel');
+      Sound.wrong();
+      setStatus('图案不一样，换一张试试');
+      return;
+    }
+
+    // 同图案：找路
+    const path = Link.findPath(first, { r: r, c: c });
+    const firstEl = linkTileEl(first.r, first.c);
+
+    if (!path) {
+      Sound.wrong();
+      el.classList.add('shake');
+      if (firstEl) firstEl.classList.add('shake');
+      setTimeout(() => {
+        el.classList.remove('shake');
+        if (firstEl) firstEl.classList.remove('shake');
+      }, 480);
+      setStatus('这两张连不上，绕一绕再试试');
+      return;
+    }
+
+    // 连上了
+    Link.busy = true;
+    const a = first;
+    const b = { r: r, c: c };
+    Link.sel = null;
+    if (firstEl) firstEl.classList.remove('sel');
+
+    drawLinkPath(path, () => {
+      // 消除
+      Link.grid[a.r][a.c].dead = true;
+      Link.grid[b.r][b.c].dead = true;
+      const ea = linkTileEl(a.r, a.c);
+      const eb = linkTileEl(b.r, b.c);
+      [ea, eb].forEach((node) => {
+        if (!node) return;
+        node.classList.add('gone');
+        setTimeout(() => { node.classList.add('dead'); node.disabled = true; }, 260);
+      });
+
+      Sound.correct();
+      const gain = linkScore(1);
+      Link.leftPairs--;
+
+      // 性能优先：消除反馈由折线、缩放动画和音效完成，不再启动全屏粒子。
+      renderLinkHUD();
+      Link.busy = false;
+
+      if (Link.leftPairs <= 0) { linkWin(); return; }
+
+      // 消除后可能死局 → 自动重排
+      if (!Link.findAnyPair()) {
+        setStatus('没有可以连的了，重新排列一下～');
+        setTimeout(() => {
+          if (Link.reshuffle(true)) {
+            Sound.whoosh();
+            setStatus('排好了，继续连！');
+          } else {
+            Link.running = false;
+            linkLose();
+          }
+        }, 320);
+      } else {
+        setStatus('连上了！还剩 ' + Link.leftPairs + ' 对');
+      }
+    });
+  }
+
+  // 连击计分：连续成功则递增，中断后归零
+  function linkScore(success) {
+    if (!success) { Link.combo = 0; return 0; }
+    const L = CONFIG.link;
+    Link.combo = Math.min(L.comboMax, Link.combo + 1);
+    const gain = L.scoreMatch + (Link.combo - 1) * L.scoreCombo;
+    Link.score += gain;
+    if (Link.combo >= 2) {
+      const badge = $('comboBadge');
+      badge.textContent = 'COMBO ×' + Link.combo + '  +' + gain;
+      badge.classList.remove('pop');
+      void badge.offsetWidth;
+      badge.classList.add('pop');
+    }
+    return gain;
+  }
+
+  function linkTileEl(r, c) {
+    const board = $('linkBoard');
+    return board ? board.querySelector('.link-tile[data-r="' + r + '"][data-c="' + c + '"]') : null;
+  }
+
+  /* ---------- 提示（无步可走时/家长要求） ---------- */
+  function linkHint() {
+    const pair = Link.findAnyPair();
+    if (!pair || !Link.running || Link.paused) return;
+    [pair.a, pair.b].forEach((p) => {
+      const el = linkTileEl(p.r, p.c);
+      if (!el) return;
+      el.classList.add('hintpulse');
+      setTimeout(() => el.classList.remove('hintpulse'), 2600);
+    });
+  }
+
+  /* ---------- 胜利 / 失败 ---------- */
+  function linkWin() {
+    Link.running = false;
+    Link.busy = true;
+    if (Link.rafTimer) { cancelAnimationFrame(Link.rafTimer); Link.rafTimer = 0; }
+
+    const L = CONFIG.link;
+    const ratio = Link.timeLeft / Link.timeTotal;
+    const timeBonus = Math.round(Link.timeLeft) * L.scoreTimeBonus;
+    Link.score += timeBonus;
+
+    const stars = ratio >= L.starRatio[0] ? 3 : (ratio >= L.starRatio[1] ? 2 : 1);
+    const prevBest = starsOf(S.level);
+    const best = Math.max(prevBest, stars);
+    if (best > prevBest) Save.progress().starsByLevel[S.level] = best;
+    Save.markDirty();
+
+    Sound.win();
+
+    // 复用现有庆祝弹窗，但把"认识一下"换成得分信息
+    const p = pick(LINK_PRAISE);
+    $('celEmoji').textContent = p.e;
+    $('celTitle').textContent = p.t;
+    $('celSub').textContent = p.s;
+    $('celLevel').textContent = '第 ' + S.level + ' 关 · ' + levelName(S.level);
+
+    let starHTML = '';
+    for (let i = 0; i < 3; i++) {
+      starHTML += '<span class="star' + (i < best ? ' on' : '') + '" style="animation-delay:' + (i * 140) + 'ms">⭐</span>';
+    }
+    $('celStars').innerHTML = starHTML;
+
+    $('celStarNote').textContent = S.isReplay && best <= prevBest
+      ? '本关最好成绩 ' + best + ' 颗星'
+      : (best >= 3 ? '太厉害了，满星！' : '');
+
+    $('celLearn').innerHTML =
+      '<span class="cl-label">本关得分</span>' +
+      '<span class="cl-main">' + Link.score + ' 分（剩时奖励 ' + timeBonus + '）</span>';
+
+    $('nextBtn').innerHTML = S.isReplay ? '返回关卡列表 📋' : '下一关 ▶';
+    $('winOverlay').classList.add('show');
+
+    speak(p.t.replace('！', '') + '！得了 ' + Link.score + ' 分');
+  }
+
+  function linkLose() {
+    Link.running = false;
+    Link.busy = true;
+    if (Link.rafTimer) { cancelAnimationFrame(Link.rafTimer); Link.rafTimer = 0; }
+    Sound.sad();
+
+    $('rescueEmoji').textContent = '⏰';
+    $('rescueTitle').textContent = '时间到啦';
+    $('rescueText').innerHTML = '还剩 <b>' + Link.leftPairs + '</b> 对没连完。<br>' +
+      '这次我们多给一点时间，再来一局吧～';
+    $('rescueRetry').textContent = '再来一局 🔄';
+    $('rescueOverlay').classList.add('show');
   }
 
   /* ---------- 8.5 FLIP 洗牌 ----------
@@ -2426,8 +3216,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     if (card.isTarget) {
       setBusy(true);
       el.classList.add('correct');
-      const r = el.getBoundingClientRect();
-      FX.burst(r.left + r.width / 2, r.top + r.height / 2, 26);
+      // 卡片弹跳 + 正确音效已经足够明确；移除高开销的全屏 Emoji 粒子。
       Sound.correct();
       setStatus('找到啦！这是 ' + label(card.item) + ' 🎉');
       await sleep(640);
@@ -2474,8 +3263,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       first.el.classList.add('matched', 'correct');
       card.el.classList.add('matched', 'correct');
 
-      const r = card.el.getBoundingClientRect();
-      FX.burst(r.left + r.width / 2, r.top + r.height / 2, 20, ['✨', '⭐', '💫']);
+      // 匹配高亮、弹跳和音效保留；不再绘制全屏粒子。
       Sound.correct();
       if (CONFIG.lives.refillOnMatch) updateHearts(+1);
 
@@ -2543,8 +3331,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     Save.markDirty();
 
     Sound.win();
-    FX.rain(72);
-    setTimeout(() => FX.rain(44), 680);
 
     showWin(best, prevBest, stars);
 
@@ -2612,6 +3398,13 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
   function retryAfterRescue() {
     hideOverlays();
+    // 连连看是"时间不够"，重来时多给 30 秒；其余玩法保持原有的减负策略
+    if (S.mode === 'link') {
+      S.linkBonusTime = (S.linkBonusTime || 0) + 30;
+      setBusy(false);
+      startLevel();
+      return;
+    }
     S.mercy = Math.min(CONFIG.mercy.maxReduce, S.mercy + CONFIG.mercy.reducePerRetry);
     setBusy(false);
     startLevel();
@@ -2748,7 +3541,13 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     clearTimeout(S.hintTimer);
     hideOverlays();
     closeLevels();
+    // 停止连连看的计时器，避免回到首页后还在倒计时
+    Link.running = false;
+    Link.paused = false;
+    Link.sel = null;
+    if (Link.rafTimer) { cancelAnimationFrame(Link.rafTimer); Link.rafTimer = 0; }
     S.isReplay = false;
+    S.linkBonusTime = 0;
     S.level = Save.maxLevel();  // 回首页后"开始"永远指向最新一关
     $('parentOverlay').classList.remove('show');
     applyTheme(currentTheme());
@@ -2842,10 +3641,40 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       if (S.busy) { Sound.pop(); return; }
       Sound.pop();
       $('pauseOverlay').classList.add('show');
+      if (S.mode === 'link') {
+        linkPauseTimer();
+        // 暂停面板里展示当前统计，并给出"重排"入口
+        $('pauseText').textContent = '时间已经停住啦，休息一下～';
+        $('pauseStats').classList.remove('hidden');
+        $('psScore').textContent = String(Link.score);
+        $('psTime').textContent = Math.ceil(Link.timeLeft) + 's';
+        $('psLeft').textContent = Link.leftPairs + ' 对';
+        const shuffleBtn = $('pauseShuffle');
+        shuffleBtn.classList.remove('hidden');
+        shuffleBtn.textContent = '重排一次 🔀（还剩 ' + Link.reshuffles + ' 次）';
+        shuffleBtn.disabled = Link.reshuffles <= 0;
+      } else {
+        $('pauseText').textContent = '准备好了就继续吧～';
+        $('pauseStats').classList.add('hidden');
+        $('pauseShuffle').classList.add('hidden');
+      }
     });
     $('pauseResume').addEventListener('click', () => {
       Sound.pop();
       $('pauseOverlay').classList.remove('show');
+      if (S.mode === 'link') linkResumeTimer();
+    });
+    $('pauseShuffle').addEventListener('click', () => {
+      if (S.mode !== 'link' || Link.reshuffles <= 0) return;
+      Sound.pop();
+      Link.reshuffles--;
+      if (Link.reshuffle(true)) {
+        Sound.whoosh();
+        setStatus('重新排列好啦～');
+        $('psLeft').textContent = Link.leftPairs + ' 对';
+        $('pauseShuffle').textContent = '重排一次 🔀（还剩 ' + Link.reshuffles + ' 次）';
+        $('pauseShuffle').disabled = Link.reshuffles <= 0;
+      }
     });
     $('pauseLevels').addEventListener('click', () => {
       Sound.pop();
@@ -2856,6 +3685,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       Sound.pop();
       $('pauseOverlay').classList.remove('show');
       S.mercy = 0;
+      if (S.mode === 'link') { Link.running = false; Link.paused = false; }
       startLevel();
     });
     $('pauseHome').addEventListener('click', goHome);
@@ -2867,6 +3697,21 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       onCardTap(el);
     });
     boardEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    /* 连连看棋盘点击 */
+    $('linkBoard').addEventListener('click', (e) => {
+      const el = e.target.closest('.link-tile');
+      if (!el || el.disabled) return;
+      linkTap(el);
+    });
+    $('linkBoard').addEventListener('contextmenu', (e) => e.preventDefault());
+
+    /* 窗口尺寸变化：重算格子大小并重画 */
+    window.addEventListener('resize', () => {
+      if (S.mode === 'link' && S.screen === 'game') {
+        renderLinkBoard();
+      }
+    });
 
     /* 过关 → 下一关 / 补星后回列表 */
     $('nextBtn').addEventListener('click', () => {
@@ -3061,7 +3906,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     Sound.muted = Save.data.muted;
 
     applyTheme(currentTheme());
-    FX.init();
     renderHome();
     renderHearts();
     bindEvents();
@@ -3099,6 +3943,16 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     if ('speechSynthesis' in window) {
       try { window.speechSynthesis.getVoices(); } catch (e) { /* ignore */ }
     }
+
+    // 调试/自测出口：方便在控制台查看状态、写自动化脚本
+    window.TG = {
+      CONFIG: CONFIG,
+      S: S,
+      Save: Save,
+      Link: Link,
+      anyPair: () => Link.findAnyPair(),
+      path: (a, b) => Link.findPath(a, b)
+    };
   }
 
   if (document.readyState === 'loading') {
