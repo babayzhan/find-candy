@@ -2,1296 +2,3001 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>找到那颗糖</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFF7F2">
+<title>找到那颗糖 · 记忆乐园</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; }
+/* ============================================================
+   找到那颗糖 · 记忆乐园  v2.0
+   儿童记忆游戏（4-8 岁）· 单文件 · 原生 JS
+   样式分区：变量 / 通用 / 首页 / 游戏 / 卡牌 / 弹窗 / 动画
+   ============================================================ */
 
-  html, body { height: 100%; }
+/* ---------- 1. 变量与基础 ---------- */
+:root{
+  --accent:#FF8FA3;
+  --accent2:#FFC6D2;
+  --accent-deep:#D94F6B;
+  --accent-soft:#FFE6EC;
+  --bg1:#FFF7F2;
+  --bg2:#FFEDF3;
 
-  html { -webkit-text-size-adjust: 100%; }
+  --ink:#463A56;
+  --ink-2:#8A7C99;
+  --card-radius:18px;
+  --shadow:0 10px 26px rgba(120,90,140,.14);
+  --shadow-sm:0 4px 12px rgba(120,90,140,.10);
+}
 
-  body {
-    margin: 0;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-    color: #54663f;
-    background: #e3efc6;
-    -webkit-font-smoothing: antialiased;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","HarmonyOS Sans SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;
+  touch-action:manipulation;
+  overscroll-behavior:none;
+  transition:background .45s ease;
+}
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(760px 460px at 6% -8%, var(--accent-soft), transparent 62%),
+    radial-gradient(620px 420px at 104% 4%, #E4F3FF, transparent 60%);
+}
+button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.hidden{display:none !important}
 
-  /* 9:16 竖屏画布：始终按可视区域等比铺满，内部尺寸跟着 --u 缩放 */
-  .frame {
-    --u: 1;
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(100vw, calc(100vh * 9 / 16), 720px);
-    width: min(100vw, calc(100dvh * 9 / 16), 720px);
-    aspect-ratio: 9 / 16;
-    border-radius: clamp(0px, calc(12px * var(--u)), 12px);
-    overflow: hidden;
-    background: #f2f7d6;
-    box-shadow:
-      0 calc(40px * var(--u)) calc(100px * var(--u)) calc(-40px * var(--u)) rgba(60, 84, 38, .55),
-      0 0 0 1px rgba(255, 255, 255, .55);
-  }
+/* ---------- 2. 屏幕容器 ---------- */
+.screen{
+  position:fixed;inset:0;z-index:1;
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;
+  transform:translateY(10px) scale(.995);
+  transition:opacity .32s ease, transform .32s ease;
+}
+.screen.active{opacity:1;pointer-events:auto;transform:none}
 
-  /* ---------- 背景 ---------- */
-  .bg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-  }
+/* ---------- 3. 首页 ---------- */
+#screen-home{
+  overflow-y:auto;overflow-x:hidden;
+  align-items:center;
+  padding:calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+.home-inner{
+  width:100%;max-width:460px;margin:auto;
+  display:flex;flex-direction:column;gap:12px;
+}
 
-  .petals {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    overflow: hidden;
-    pointer-events: none;
-  }
+.brand{text-align:center;padding-top:4px}
+.brand-badge{
+  display:inline-block;
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  color:var(--accent-deep);
+  background:rgba(255,255,255,.78);
+  border:1.5px solid rgba(255,255,255,.9);
+  border-radius:999px;
+  padding:4px 12px;
+  box-shadow:var(--shadow-sm);
+}
+.title{
+  margin-top:8px;
+  font-size:clamp(32px,9.6vw,44px);
+  line-height:1.12;
+  font-weight:900;
+  letter-spacing:2px;
+  color:var(--ink);
+  text-shadow:0 2px 0 rgba(255,255,255,.85);
+}
+.title em{
+  font-style:normal;
+  color:var(--accent-deep);
+  position:relative;
+  display:inline-block;
+}
+.title em::after{
+  content:"";
+  position:absolute;left:2%;right:2%;bottom:2px;height:8px;
+  background:var(--accent2);border-radius:6px;
+  opacity:.55;z-index:-1;
+}
+.subtitle{
+  margin-top:6px;
+  font-size:12.5px;
+  letter-spacing:1px;
+  color:var(--ink-2);
+}
 
-  .petal {
-    position: absolute;
-    top: 0;
-    width: calc(16px * var(--u));
-    height: calc(16px * var(--u));
-    background: #b0d485;
-    border-radius: 62% 0 62% 0;
-    opacity: 0;
-    animation: drift linear infinite;
-  }
+.mascot{position:relative;height:88px;display:grid;place-items:center;margin:2px 0}
+.mascot-candy{
+  font-size:60px;line-height:1;
+  filter:drop-shadow(0 10px 14px rgba(217,79,107,.22));
+  animation:float 3.1s ease-in-out infinite;
+}
+.mascot .spark{
+  position:absolute;font-size:15px;opacity:.95;
+  animation:twinkle 2.6s ease-in-out infinite;
+}
+.mascot .s1{left:24%;top:16px}
+.mascot .s2{right:26%;top:10px;font-size:12px;animation-delay:.7s}
+.mascot .s3{right:33%;bottom:8px;font-size:13px;animation-delay:1.3s}
 
-  @keyframes drift {
-    0%   { transform: translate3d(0, calc(-160px * var(--u)), 0) rotate(0deg); opacity: 0; }
-    12%  { opacity: .42; }
-    88%  { opacity: .38; }
-    100% { transform: translate3d(calc(64px * var(--u)), calc(1340px * var(--u)), 0) rotate(320deg); opacity: 0; }
-  }
+.panel{
+  background:rgba(255,255,255,.72);
+  border:1.5px solid rgba(255,255,255,.95);
+  border-radius:24px;
+  padding:14px;
+  box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:8px;
+}
+.panel-label{
+  font-size:11.5px;font-weight:800;letter-spacing:1.5px;color:var(--ink-2);
+  display:flex;align-items:center;gap:6px;
+}
+.panel-label::before{
+  content:"";width:5px;height:12px;border-radius:3px;background:var(--accent);
+}
 
-  /* ---------- 版面 ---------- */
-  .app {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    padding: clamp(16px, calc(40px * var(--u)), 40px) 0 clamp(14px, calc(34px * var(--u)), 34px);
-  }
+.mode-row{display:flex;gap:8px}
+.mode-card{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:11px 6px 9px;
+  border-radius:18px;
+  background:#fff;
+  border:2.5px solid transparent;
+  box-shadow:var(--shadow-sm);
+  transition:transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.mode-card:active{transform:scale(.97)}
+.mode-card.on{
+  border-color:var(--accent);
+  background:linear-gradient(180deg,#fff,var(--accent-soft));
+}
+.mode-icon{font-size:25px;line-height:1.15}
+.mode-name{font-size:14px;font-weight:800}
+.mode-desc{font-size:9.8px;line-height:1.3;color:var(--ink-2);text-align:center}
 
-  header {
-    height: clamp(96px, calc(150px * var(--u)), 150px);
-    flex: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    text-align: center;
-    padding-bottom: clamp(4px, calc(8px * var(--u)), 8px);
-  }
+.theme-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme-chip{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 10px;
+  border-radius:16px;
+  background:#fff;
+  border:2.5px solid transparent;
+  box-shadow:var(--shadow-sm);
+  text-align:left;
+  transition:transform .18s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
+}
+.theme-chip:active{transform:scale(.97)}
+.theme-chip.on{border-color:var(--accent);background:var(--accent-soft)}
+.theme-chip.locked{opacity:.62;background:#F7F4F9;box-shadow:none}
+.theme-icon{font-size:20px;line-height:1}
+.theme-text{display:flex;flex-direction:column;min-width:0}
+.theme-text b{font-size:12.5px;font-weight:800;white-space:nowrap}
+.theme-text small{font-size:9px;color:var(--ink-2);line-height:1.4}
 
-  h1 {
-    margin: 0;
-    font-size: clamp(17px, calc(38px * var(--u)), 38px);
-    font-weight: 500;
-    letter-spacing: .18em;
-    text-indent: .18em;
-    color: #5d7045;
-    text-shadow: 0 calc(2px * var(--u)) 0 rgba(255, 255, 255, .62);
-  }
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;
+  padding:15px 20px;
+  border-radius:999px;
+  font-size:17px;font-weight:800;letter-spacing:1px;
+  color:#fff;
+  background:linear-gradient(160deg,var(--accent),var(--accent-deep));
+  box-shadow:0 10px 22px -6px rgba(217,79,107,.55), inset 0 -3px 0 rgba(0,0,0,.08);
+  transition:transform .16s ease, box-shadow .2s ease;
+}
+.btn-primary:active{transform:translateY(2px) scale(.985);box-shadow:0 6px 14px -6px rgba(217,79,107,.5)}
+.btn-primary .arrow{font-size:13px;opacity:.9}
+.btn-primary b{font-size:19px;padding:0 2px}
 
-  .status {
-    margin: clamp(6px, calc(10px * var(--u)), 10px) 0 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .7em;
-    font-size: clamp(12px, calc(17px * var(--u)), 17px);
-    letter-spacing: .08em;
-    color: #6c8451;
-  }
+.home-stats{
+  text-align:center;font-size:11.5px;color:var(--ink-2);letter-spacing:.5px;
+}
 
-  .status .sep { opacity: .38; }
+.parent-tip{
+  margin-top:2px;
+  padding:6px 10px 2px;
+  font-size:10.5px;line-height:1.6;color:#A79BB3;
+  text-align:center;
+  border-top:1px dashed rgba(167,155,179,.35);
+}
+.parent-tip b{color:#8E7FA0;font-weight:700}
 
-  .status .lives { color: #b5893f; }
-  .status .lives.low { color: #cf7a4f; }
+/* ---------- 4. 游戏页 ---------- */
+#screen-game{
+  padding:calc(8px + env(safe-area-inset-top)) 14px calc(10px + env(safe-area-inset-bottom));
+}
+.hud-top{display:flex;align-items:center;gap:8px}
+.icon-btn{
+  width:42px;height:42px;flex:none;
+  display:grid;place-items:center;
+  font-size:19px;line-height:1;
+  border-radius:15px;
+  background:rgba(255,255,255,.82);
+  box-shadow:var(--shadow-sm);
+  transition:transform .15s ease, background .2s ease;
+}
+.icon-btn:active{transform:scale(.93);background:#fff}
+.icon-btn.is-off{opacity:.6}
 
-  .hint {
-    margin: clamp(6px, calc(12px * var(--u)), 12px) 0 0;
-    font-size: clamp(12px, calc(18px * var(--u)), 18px);
-    letter-spacing: .06em;
-    color: #7d8f63;
-    min-height: 1.4em;
-    padding: 0 clamp(20px, calc(40px * var(--u)), 40px);
-    text-align: center;
-  }
+.hud-mid{flex:1;text-align:center;min-width:0}
+.hud-level{font-size:15px;font-weight:900;letter-spacing:.5px;line-height:1.25}
+.hud-theme{
+  display:inline-block;
+  margin-top:2px;
+  font-size:10px;font-weight:700;
+  padding:2px 9px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent-deep);
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 
-  .hint.pop { animation: pop .42s ease both; }
+.hud-sub{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:9px;min-height:34px;
+}
+.hearts{display:flex;gap:1px;font-size:21px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.06))}
+.hearts .heart{display:inline-block;transition:transform .2s ease}
+.hearts .heart.off{filter:grayscale(1);opacity:.22}
+.hearts .heart.break{animation:heartBreak .5s ease}
+.hearts .heart.gain{animation:heartGain .5s ease}
 
-  @keyframes pop {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: none; }
-  }
+.chip{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.9);
+  box-shadow:var(--shadow-sm);
+  font-size:11px;color:var(--ink-2);
+  white-space:nowrap;
+}
+.chip-label{font-size:9.5px;letter-spacing:1px;color:#B0A4BC}
+.chip-main{font-size:15px;font-weight:900;color:var(--ink);letter-spacing:.3px}
+#targetChip .chip-main{color:var(--accent-deep)}
 
-  /* ---------- 牌桌 ---------- */
-  .stage {
-    position: relative;
-    flex: 1;
-    min-height: 0;
-    --cw: 155px;
-    --ch: 220px;
-  }
+/* 计时条 */
+.timer{
+  display:flex;align-items:center;gap:8px;
+  width:100%;max-width:500px;margin:8px auto 0;
+  height:16px;opacity:0;transition:opacity .2s ease;
+}
+.timer.show{opacity:1}
+.timer-num{
+  flex:none;width:22px;height:22px;margin-top:-3px;
+  display:grid;place-items:center;
+  font-size:11px;font-weight:900;color:#fff;
+  background:var(--accent);border-radius:50%;
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+.timer-track{
+  flex:1;height:8px;border-radius:99px;overflow:hidden;
+  background:rgba(255,255,255,.85);
+  box-shadow:inset 0 1px 3px rgba(120,90,140,.16);
+}
+.timer-track i{
+  display:block;height:100%;width:100%;
+  border-radius:99px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent));
+}
 
-  .card {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: var(--cw);
-    height: var(--ch);
-    perspective: 1200px;
-    transform:
-      translate3d(var(--x, 0px), calc(var(--y, 0px) + var(--lift, 0px)), 0)
-      rotate(var(--rot, 0deg))
-      scale(calc(var(--sc, 1) * var(--lift-s, 1)));
-    transform-origin: 50% 62%;
-    transition:
-      transform calc(.62s / var(--speed, 2)) cubic-bezier(.34, 1.3, .42, 1),
-      opacity .4s ease;
-    will-change: transform;
-  }
+/* 牌桌 */
+.stage{
+  flex:1;min-height:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding:6px 0 2px;
+  overflow-y:auto;
+}
+.board{
+  --cols:4;
+  --gap:10px;
+  width:100%;max-width:500px;
+  display:flex;flex-wrap:wrap;justify-content:center;
+  gap:var(--gap);
+  padding:4px;
+}
 
-  .card::after {
-    content: '';
-    position: absolute;
-    inset: calc(-7px * var(--u));
-    border-radius: calc(var(--cw) * .115);
-    pointer-events: none;
-    box-shadow: 0 0 0 0 rgba(245, 201, 107, 0), 0 0 0 rgba(245, 201, 107, 0);
-    transition: box-shadow .45s ease;
-  }
+.status{
+  min-height:22px;
+  padding:0 10px;
+  font-size:13.5px;line-height:1.5;
+  font-weight:700;
+  color:#5E4E6B;
+  text-align:center;
+  letter-spacing:.3px;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+}
+.status.flash{animation:statusIn .32s ease}
 
-  .card.chosen::after {
-    box-shadow: 0 0 0 calc(3px * var(--u)) rgba(246, 203, 112, .95), 0 0 calc(34px * var(--u)) rgba(246, 203, 112, .7);
-  }
+/* ---------- 5. 卡牌 ---------- */
+.card{
+  position:relative;
+  width:calc((100% - var(--gap) * (var(--cols) - 1)) / var(--cols));
+  aspect-ratio:1 / 1.05;
+  flex:0 0 auto;
+  padding:0;border:none;background:none;
+  perspective:900px;
+  will-change:transform;
+  animation:cardIn .4s cubic-bezier(.2,.9,.3,1) backwards;
+}
+.card:active{transform:scale(.965)}
+.card-inner{
+  position:relative;width:100%;height:100%;
+  transform-style:preserve-3d;
+  transition:transform .46s cubic-bezier(.34,1.4,.64,1);
+}
+.card.flipped .card-inner{transform:rotateY(180deg)}
 
-  .stage.pickable .card { cursor: pointer; }
-  .card.chosen { --lift: -22px; --lift-s: 1.05; z-index: 40 !important; }
+.face{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--card-radius);
+  overflow:hidden;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+/* 牌背 */
+.face.back{
+  background:
+    radial-gradient(circle at 22% 24%, rgba(255,255,255,.55) 0 5px, transparent 6px),
+    radial-gradient(circle at 76% 72%, rgba(255,255,255,.45) 0 4px, transparent 5px),
+    linear-gradient(150deg,var(--accent2),var(--accent));
+  border:3px solid rgba(255,255,255,.85);
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.06), 0 6px 14px rgba(120,90,140,.16);
+}
+.face.back::after{
+  content:"";
+  position:absolute;inset:9%;
+  border-radius:calc(var(--card-radius) - 6px);
+  border:1.5px dashed rgba(255,255,255,.55);
+  pointer-events:none;
+}
+.back-mark{
+  font-size:var(--glyph,34px);font-weight:900;color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.10);
+  opacity:.96;
+  transform:translateY(-1px);
+}
+/* 牌面 */
+.face.front{
+  transform:rotateY(180deg);
+  background:linear-gradient(162deg,#fff,#FDFAFF);
+  border:3px solid #fff;
+  box-shadow:inset 0 -5px 0 rgba(120,90,140,.05), 0 6px 14px rgba(120,90,140,.13);
+}
+.glyph{
+  font-size:var(--glyph,34px);
+  line-height:1;
+  transform:translateY(2px);
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.07));
+}
+.glyph.num{
+  font-family:"Arial Rounded MT Bold","PingFang SC",system-ui,sans-serif;
+  font-weight:900;
+  letter-spacing:-1px;
+  transform:none;
+  filter:none;
+}
 
-  .card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transition: transform .8s cubic-bezier(.52, .06, .26, 1);
-  }
+/* 状态 */
+.card.matched .face.front{
+  border-color:var(--accent);
+  background:linear-gradient(162deg,#fff,var(--accent-soft));
+}
+.card.correct{animation:cardPop .55s cubic-bezier(.34,1.56,.64,1)}
+.card.shake{animation:cardShake .48s ease}
 
-  .card.is-back .card-inner { transform: rotateY(180deg); }
+/* 呼吸灯提示 */
+.card.hint{z-index:5}
+.card.hint .face.back{
+  animation:breath 1.15s ease-in-out infinite;
+}
 
-  .face {
-    position: absolute;
-    inset: 0;
-    border-radius: calc(var(--cw) * .085);
-    overflow: hidden;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    box-shadow:
-      0 calc(14px * var(--u)) calc(28px * var(--u)) calc(-12px * var(--u)) rgba(74, 98, 46, .42),
-      0 calc(3px * var(--u)) calc(9px * var(--u)) rgba(74, 98, 46, .10);
-    transition: box-shadow .5s ease;
-  }
+/* ---------- 6. 弹层 ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:80;
+  display:grid;place-items:center;
+  padding:20px;
+  background:rgba(70,50,90,.34);
+  -webkit-backdrop-filter:blur(5px);
+  backdrop-filter:blur(5px);
+  opacity:0;pointer-events:none;
+  visibility:hidden;
+  transition:opacity .3s ease, visibility .3s ease;
+}
+.overlay.show{opacity:1;pointer-events:auto;visibility:visible}
+.sheet-card{
+  position:relative;
+  width:100%;max-width:360px;
+  max-height:86vh;overflow-y:auto;
+  padding:26px 22px 22px;
+  border-radius:30px;
+  background:linear-gradient(180deg,#fff,#FFFBFD);
+  box-shadow:0 24px 60px -18px rgba(60,40,80,.5), inset 0 0 0 1.5px rgba(255,255,255,.9);
+  text-align:center;
+  transform:scale(.9) translateY(14px);
+  transition:transform .38s cubic-bezier(.2,.9,.3,1.3);
+}
+.overlay.show .sheet-card{transform:none}
 
-  /* ---------- 正面 ---------- */
-  .face.front {
-    background: linear-gradient(168deg, #fffef9 0%, #fcf9ee 100%);
-  }
+/* 过关庆祝 */
+#winOverlay .sheet-card{overflow:hidden}
+.cel-rays{
+  position:absolute;left:50%;top:34px;width:420px;height:420px;
+  margin-left:-210px;
+  background:conic-gradient(from 0deg,
+    rgba(255,143,163,.18) 0 10deg, transparent 10deg 26deg,
+    rgba(255,198,210,.18) 26deg 36deg, transparent 36deg 52deg);
+  border-radius:50%;
+  animation:spin 16s linear infinite;
+  pointer-events:none;
+}
+.cel-level{
+  display:inline-block;
+  margin-bottom:6px;
+  padding:3px 12px;
+  border-radius:999px;
+  background:#F4EFF8;
+  font-size:10px;font-weight:800;letter-spacing:1.2px;color:var(--ink-2);
+  position:relative;
+}
+.cel-emoji{font-size:52px;line-height:1;animation:bounceIn .7s cubic-bezier(.2,1.4,.4,1);position:relative}
+.cel-title{
+  margin-top:6px;
+  font-size:26px;font-weight:900;letter-spacing:1px;
+  color:var(--accent-deep);
+  position:relative;
+}
+.cel-sub{
+  margin-top:6px;
+  font-size:13px;line-height:1.6;color:var(--ink-2);
+  position:relative;
+}
+.cel-stars{display:flex;justify-content:center;gap:6px;margin:14px 0 4px;font-size:27px;line-height:1}
+.cel-stars .star{opacity:.22;filter:grayscale(1);transform:scale(.8)}
+.cel-stars .star.on{
+  opacity:1;filter:none;
+  animation:starPop .55s cubic-bezier(.2,1.5,.4,1) backwards;
+}
+.cel-star-note{
+  min-height:16px;
+  font-size:11px;font-weight:700;color:var(--accent-deep);
+  position:relative;
+}
+.cel-star-note:empty{display:none}
+.cel-learn{
+  margin:12px 0 18px;
+  padding:10px 12px;
+  border-radius:16px;
+  background:var(--accent-soft);
+  display:flex;flex-direction:column;gap:3px;
+  position:relative;
+}
+.cl-label{font-size:9.5px;letter-spacing:2px;color:var(--accent-deep);opacity:.8}
+.cl-main{font-size:16px;font-weight:800;color:var(--ink)}
+.cel-card .btn-primary{position:relative}
 
-  .face.front::before {
-    content: '';
-    position: absolute;
-    inset: 7%;
-    border-radius: calc(var(--cw) * .055);
-    border: 1px solid rgba(176, 198, 146, .34);
-    pointer-events: none;
-  }
+/* 通用弹层文案 */
+.sheet-emoji{font-size:42px;line-height:1}
+.sheet-title{margin-top:8px;font-size:22px;font-weight:900;letter-spacing:.5px}
+.sheet-text{margin-top:8px;font-size:13px;line-height:1.7;color:var(--ink-2)}
+.sheet-btns{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+.btn-ghost{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:13px 18px;
+  border-radius:999px;
+  font-size:14.5px;font-weight:700;
+  color:var(--ink-2);
+  background:rgba(255,255,255,.9);
+  border:2px solid rgba(160,145,180,.18);
+  transition:transform .15s ease, background .2s ease;
+}
+.btn-ghost:active{transform:scale(.98);background:#fff}
 
-  .face.front.blank::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 18%;
-    aspect-ratio: 1;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(176, 198, 146, .28), rgba(176, 198, 146, 0) 70%);
-  }
+/* 家长面板 */
+.parent-sheet{text-align:left}
+.parent-sheet h3{
+  font-size:18px;font-weight:900;letter-spacing:.5px;
+  display:flex;align-items:center;gap:6px;
+}
+.parent-note{
+  margin-top:8px;
+  font-size:11.5px;line-height:1.75;color:var(--ink-2);
+  background:var(--accent-soft);
+  border-radius:14px;padding:10px 12px;
+}
+.parent-note b{color:var(--accent-deep)}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 2px;
+  border-bottom:1px dashed rgba(160,145,180,.22);
+  font-size:13.5px;font-weight:600;
+}
+.setting-row small{display:block;font-size:10px;font-weight:400;color:var(--ink-2);margin-top:2px}
+.switch{
+  flex:none;
+  min-width:56px;padding:7px 12px;
+  border-radius:999px;
+  font-size:11.5px;font-weight:800;
+  background:#EFEAF4;color:var(--ink-2);
+  transition:background .2s ease,color .2s ease;
+}
+.switch.on{background:var(--accent);color:#fff}
+.switch.warn{background:#FFE1DE;color:#D9534F}
+.backup-btns{display:flex;gap:6px;flex:none}
+.mini-btn{
+  padding:7px 13px;
+  border-radius:999px;
+  font-size:11.5px;font-weight:800;
+  background:#EFEAF4;color:#6E5F7D;
+  transition:transform .15s ease, background .2s ease;
+}
+.mini-btn:active{transform:scale(.94);background:#E4DCEB}
+.parent-actions{display:flex;flex-direction:column;gap:9px;margin-top:16px}
 
-  .face.front.has-candy {
-    background: linear-gradient(168deg, #fffdf4 0%, #fdf3d6 100%);
-  }
+/* 首页：关卡列表入口 */
+.btn-ghost .ghost-sub{
+  margin-left:4px;
+  font-size:10.5px;font-weight:600;color:#A79BB3;
+}
 
-  .face.front.is-target {
-    box-shadow:
-      0 0 0 calc(2px * var(--u)) rgba(243, 201, 121, .95),
-      0 0 calc(30px * var(--u)) rgba(243, 201, 121, .6),
-      0 calc(14px * var(--u)) calc(28px * var(--u)) calc(-12px * var(--u)) rgba(74, 98, 46, .35);
-  }
+/* 首页：本机缓存提示条 */
+.save-warn{
+  display:flex;align-items:center;gap:7px;
+  width:100%;
+  padding:9px 11px;
+  border-radius:14px;
+  background:#FFF7E6;
+  border:1.5px solid #F0CE96;
+  box-shadow:0 2px 8px rgba(217,153,40,.10);
+  color:#8A5A12;
+  font-size:11px;line-height:1.45;font-weight:700;
+  text-align:left;
+  transition:transform .15s ease, background .2s ease;
+}
+.save-warn:active{transform:scale(.985);background:#FFF2D8}
+.sw-icon{font-size:13px;line-height:1;flex:none}
+.sw-text{flex:1}
+.sw-more{flex:none;font-size:15px;opacity:.5;line-height:1;transform:translateY(-1px)}
 
-  .front-ico {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 72%;
-    height: auto;
-    transform: translate(-50%, -50%);
-  }
+/* ---------- 关卡列表 ---------- */
+.levels-sheet{
+  max-width:420px;
+  padding:16px 14px 14px;
+  text-align:left;
+}
+.levels-head{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:10px;
+}
+.chap-btn{
+  width:34px;height:34px;flex:none;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:#F3EEF8;
+  color:var(--ink);
+  font-size:19px;font-weight:900;line-height:1;
+  transition:transform .15s ease, opacity .2s ease;
+}
+.chap-btn:active{transform:scale(.92)}
+.chap-btn:disabled{opacity:.3;pointer-events:none}
+.chap-title{flex:1;text-align:center;line-height:1.3;min-width:0}
+.chap-title b{display:block;font-size:16px;font-weight:900;letter-spacing:.5px}
+.chap-title small{font-size:10.5px;color:var(--ink-2)}
 
-  /* ---------- 背面 ---------- */
-  .face.back {
-    transform: rotateY(180deg);
-    background:
-      radial-gradient(120% 90% at 26% 8%, rgba(255,255,255,.52), rgba(255,255,255,0) 58%),
-      repeating-linear-gradient(45deg, rgba(255,255,255,.085) 0 6px, rgba(255,255,255,0) 6px 13px),
-      linear-gradient(158deg, #b6d98d 0%, #9cc46e 46%, #86b45c 100%);
-  }
+.lv-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  max-height:56vh;
+  overflow-y:auto;
+  padding:2px;
+  -webkit-overflow-scrolling:touch;
+}
+.lv-card{
+  position:relative;
+  display:flex;flex-direction:column;gap:1px;
+  padding:8px 10px 7px;
+  border-radius:14px;
+  background:#fff;
+  border:2px solid rgba(160,145,180,.14);
+  box-shadow:0 3px 9px rgba(120,90,140,.07);
+  text-align:left;
+  transition:transform .15s ease, border-color .2s ease, background .2s ease;
+}
+.lv-card:active{transform:scale(.97)}
+.lv-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.lv-no{font-size:15px;font-weight:900;letter-spacing:.5px;line-height:1.15}
+.lv-flag{font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--ink-2);white-space:nowrap}
+.lv-name{
+  font-size:10.5px;font-weight:700;color:var(--ink-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.lv-stars{font-size:10.5px;letter-spacing:1px;line-height:1.2;color:#E6DAC8}
+.lv-stars i{font-style:normal}
+.lv-stars i.on{color:#FFBE2E;text-shadow:0 1px 0 rgba(255,255,255,.6)}
 
-  .face.back::before {
-    content: '';
-    position: absolute;
-    inset: 6.5%;
-    border-radius: calc(var(--cw) * .055);
-    border: 1.6px solid rgba(255, 252, 231, .55);
-    pointer-events: none;
-  }
+.lv-card.cleared{border-color:rgba(95,207,160,.45);background:linear-gradient(180deg,#fff,#F7FDF9)}
+.lv-card.cleared .lv-flag{color:#2E9C73}
+.lv-card.gap{border-color:rgba(255,174,82,.5);background:linear-gradient(180deg,#fff,#FFFBF3)}
+.lv-card.gap .lv-flag{color:#D9821F}
+.lv-card.current{
+  border-color:var(--accent);
+  background:linear-gradient(180deg,#fff,var(--accent-soft));
+  box-shadow:0 4px 12px rgba(217,79,107,.16);
+}
+.lv-card.current .lv-flag{color:var(--accent-deep)}
+.lv-card.locked{opacity:.52;background:#F7F4F9;box-shadow:none}
+.lv-card.locked .lv-name{color:#B3A8BF}
+.lv-card.locked .lv-stars{opacity:.5}
 
-  .face.back::after {
-    content: '';
-    position: absolute;
-    inset: 10.5%;
-    border-radius: calc(var(--cw) * .04);
-    border: 1px dashed rgba(255, 252, 231, .38);
-    pointer-events: none;
-  }
+.levels-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:11px;
+  padding-top:10px;
+  border-top:1px dashed rgba(160,145,180,.25);
+}
+.levels-stat{font-size:11.5px;font-weight:800;color:var(--ink-2);letter-spacing:.5px}
+.btn-ghost.levels-close{width:auto;padding:9px 20px;font-size:12.5px}
 
-  .badge {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-  }
+/* 解锁提示 */
+.unlock-toast{
+  position:fixed;z-index:95;
+  left:50%;top:calc(12px + env(safe-area-inset-top));
+  transform:translate(-50%,-140%);
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px 10px 14px;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 14px 34px -12px rgba(60,40,80,.55);
+  transition:transform .42s cubic-bezier(.2,1.2,.3,1);
+  max-width:calc(100vw - 32px);
+}
+.unlock-toast.show{transform:translate(-50%,0)}
+.toast-icon{font-size:26px;line-height:1;animation:float 2.4s ease-in-out infinite}
+.toast-text{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.toast-text b{font-size:12.5px;font-weight:900}
+.toast-text small{font-size:10.5px;color:var(--ink-2)}
+.toast-btn{
+  flex:none;margin-left:4px;
+  padding:6px 11px;border-radius:999px;
+  font-size:11px;font-weight:800;color:#fff;
+  background:var(--accent);
+}
 
-  .badge-inner {
-    position: relative;
-    width: 52%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: radial-gradient(circle at 36% 28%, #fffefa 0%, #f8f2d8 68%, #f2e8c2 100%);
-    box-shadow:
-      0 0 0 calc(5px * var(--u)) rgba(255, 252, 231, .22),
-      0 calc(7px * var(--u)) calc(16px * var(--u)) calc(-7px * var(--u)) rgba(64, 90, 40, .55),
-      inset 0 0 0 1px rgba(255, 255, 255, .7);
-  }
+/* 粒子画布 */
+#fx{
+  position:fixed;inset:0;z-index:70;
+  pointer-events:none;
+}
 
-  .badge-inner svg {
-    position: absolute;
-    left: 10%;
-    top: 10%;
-    width: 80%;
-    height: 80%;
-    display: block;
-    transform-origin: 50% 50%;
-  }
+/* ---------- 7. 动画 ---------- */
+@keyframes float{
+  0%,100%{transform:translateY(0) rotate(-3deg)}
+  50%{transform:translateY(-9px) rotate(3deg)}
+}
+@keyframes twinkle{
+  0%,100%{opacity:.3;transform:scale(.85)}
+  50%{opacity:1;transform:scale(1.12)}
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes cardIn{
+  from{opacity:0;transform:scale(.84) translateY(10px)}
+  to{opacity:1;transform:none}
+}
+@keyframes cardPop{
+  0%{transform:scale(1)}
+  32%{transform:scale(1.13) rotate(1.5deg)}
+  64%{transform:scale(.97)}
+  100%{transform:scale(1)}
+}
+@keyframes cardShake{
+  0%,100%{transform:translateX(0)}
+  18%{transform:translateX(-7px) rotate(-2deg)}
+  38%{transform:translateX(7px) rotate(2deg)}
+  58%{transform:translateX(-5px) rotate(-1deg)}
+  78%{transform:translateX(4px)}
+}
+@keyframes breath{
+  0%,100%{box-shadow:inset 0 -4px 0 rgba(0,0,0,.06), 0 6px 14px rgba(120,90,140,.16), 0 0 0 0 rgba(255,214,107,0), 0 0 6px 0 rgba(255,214,107,.4)}
+  50%{box-shadow:inset 0 -4px 0 rgba(0,0,0,.06), 0 6px 14px rgba(120,90,140,.16), 0 0 0 7px rgba(255,255,255,.1), 0 0 26px 8px rgba(255,204,80,.95)}
+}
+@keyframes heartBreak{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.35) rotate(-8deg)}
+  60%{transform:scale(.85) rotate(6deg)}
+  100%{transform:scale(1)}
+}
+@keyframes heartGain{
+  0%{transform:scale(.6)}
+  55%{transform:scale(1.35)}
+  100%{transform:scale(1)}
+}
+@keyframes starPop{
+  0%{opacity:0;transform:scale(0) rotate(-40deg)}
+  70%{opacity:1;transform:scale(1.25) rotate(6deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+@keyframes bounceIn{
+  0%{transform:scale(.4) rotate(-12deg);opacity:0}
+  60%{transform:scale(1.12) rotate(4deg);opacity:1}
+  100%{transform:scale(1) rotate(0)}
+}
+@keyframes statusIn{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:none}
+}
 
-  /* ---------- 顶部小按钮 ---------- */
-  .topbar {
-    position: absolute;
-    left: clamp(12px, calc(28px * var(--u)), 28px);
-    right: clamp(12px, calc(28px * var(--u)), 28px);
-    top: clamp(10px, calc(26px * var(--u)), 26px);
-    z-index: 6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    pointer-events: none;
-  }
-
-  .chip {
-    pointer-events: auto;
-    font: inherit;
-    font-size: clamp(11px, calc(15px * var(--u)), 15px);
-    letter-spacing: .1em;
-    color: #6c8451;
-    background: rgba(255, 253, 238, .82);
-    border: solid rgba(140, 180, 100, .5);
-    border-width: clamp(1px, calc(1.5px * var(--u)), 1.5px);
-    border-radius: 999px;
-    padding: clamp(5px, calc(8px * var(--u)), 8px) clamp(11px, calc(18px * var(--u)), 18px);
-    cursor: pointer;
-    box-shadow: 0 calc(8px * var(--u)) calc(16px * var(--u)) calc(-12px * var(--u)) rgba(74, 98, 46, .6), inset 0 1px 0 rgba(255,255,255,.6);
-    transition: background .25s ease, border-color .25s ease, transform .2s ease;
-    white-space: nowrap;
-  }
-
-  .chip:active { transform: translateY(1px) scale(.97); }
-
-  /* ---------- 底部按钮 ---------- */
-  .actions {
-    height: clamp(58px, calc(96px * var(--u)), 96px);
-    flex: none;
-    display: grid;
-    place-items: center;
-  }
-
-  .shuffle-btn {
-    font: inherit;
-    font-size: clamp(14px, calc(19px * var(--u)), 19px);
-    letter-spacing: .18em;
-    text-indent: .18em;
-    color: #6c8451;
-    background: rgba(255, 253, 238, .78);
-    border: solid rgba(140, 180, 100, .55);
-    border-width: clamp(1.2px, calc(2px * var(--u)), 2px);
-    border-radius: 999px;
-    padding: clamp(10px, calc(14px * var(--u)), 14px) clamp(24px, calc(44px * var(--u)), 44px);
-    cursor: pointer;
-    box-shadow: 0 calc(10px * var(--u)) calc(20px * var(--u)) calc(-12px * var(--u)) rgba(74, 98, 46, .7), inset 0 1px 0 rgba(255,255,255,.6);
-    transition: background .25s ease, border-color .25s ease, transform .2s ease, opacity .3s ease;
-  }
-
-  .shuffle-btn:active { transform: translateY(0) scale(.98); }
-  .shuffle-btn[disabled] { opacity: .4; cursor: default; transform: none; }
-
-  @media (hover: hover) and (pointer: fine) {
-    .chip:hover {
-      background: #fffdf0;
-      border-color: #8cbb66;
-      transform: translateY(-1px);
-    }
-    .shuffle-btn:not([disabled]):hover {
-      background: #fffdf0;
-      border-color: #8cbb66;
-      transform: translateY(-2px);
-    }
-    .stage.pickable .card:hover { --lift: -14px; --lift-s: 1.035; }
-    .level-item:hover { background: #fffdf0; border-color: #8cbb66; }
-    .btn-primary:hover { background: linear-gradient(160deg, #a6cd78, #8dbc63); }
-    .btn-ghost:hover { background: rgba(255,255,255,.9); }
-  }
-
-  /* ---------- 弹窗 ---------- */
-  .overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: rgba(56, 74, 38, .34);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .34s ease;
-  }
-
-  .overlay.show { opacity: 1; pointer-events: auto; }
-
-  #levelSelect { z-index: 22; background: rgba(56, 74, 38, .18); }
-
-  .modal,
-  .panel {
-    width: min(100%, 460px);
-    max-height: 88%;
-    overflow-y: auto;
-    background: linear-gradient(172deg, #fffef8 0%, #f8f5e0 100%);
-    border-radius: clamp(18px, calc(28px * var(--u)), 28px);
-    padding: clamp(20px, calc(34px * var(--u)), 34px) clamp(18px, calc(30px * var(--u)), 30px);
-    text-align: center;
-    box-shadow:
-      0 calc(30px * var(--u)) calc(70px * var(--u)) calc(-26px * var(--u)) rgba(46, 64, 30, .75),
-      inset 0 0 0 1px rgba(255, 255, 255, .8);
-    transform: scale(.94) translateY(10px);
-    transition: transform .4s cubic-bezier(.2,.9,.3,1);
-  }
-
-  .overlay.show .modal,
-  .overlay.show .panel { transform: none; }
-
-  .modal h2,
-  .panel h2 {
-    margin: 0 0 clamp(8px, calc(12px * var(--u)), 12px);
-    font-size: clamp(18px, calc(28px * var(--u)), 28px);
-    font-weight: 600;
-    letter-spacing: .1em;
-    color: #5d7045;
-  }
-
-  .modal p,
-  .panel-sub {
-    margin: 0 0 clamp(16px, calc(24px * var(--u)), 24px);
-    font-size: clamp(12px, calc(16px * var(--u)), 16px);
-    line-height: 1.7;
-    color: #7d8f63;
-  }
-
-  .modal-btns {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(8px, calc(12px * var(--u)), 12px);
-  }
-
-  .btn-primary,
-  .btn-ghost {
-    font: inherit;
-    font-size: clamp(14px, calc(17px * var(--u)), 17px);
-    letter-spacing: .12em;
-    border-radius: 999px;
-    padding: clamp(10px, calc(13px * var(--u)), 13px) 20px;
-    cursor: pointer;
-    transition: background .25s ease, border-color .25s ease, transform .2s ease;
-    border: none;
-  }
-
-  .btn-primary {
-    color: #fdfcf0;
-    background: linear-gradient(160deg, #9cc46e, #86b45c);
-    box-shadow: 0 calc(10px * var(--u)) calc(20px * var(--u)) calc(-12px * var(--u)) rgba(74, 98, 46, .9);
-  }
-
-  .btn-ghost {
-    color: #6c8451;
-    background: rgba(255, 255, 255, .62);
-    border: solid rgba(140, 180, 100, .45);
-    border-width: clamp(1px, calc(1.5px * var(--u)), 1.5px);
-  }
-
-  .btn-primary:active,
-  .btn-ghost:active { transform: translateY(1px) scale(.99); }
-
-  /* ---------- 选关 ---------- */
-  .level-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: clamp(7px, calc(12px * var(--u)), 12px);
-    margin: clamp(12px, calc(20px * var(--u)), 20px) 0 clamp(14px, calc(22px * var(--u)), 22px);
-  }
-
-  .level-item {
-    font: inherit;
-    text-align: left;
-    padding: clamp(8px, calc(12px * var(--u)), 12px) clamp(9px, calc(14px * var(--u)), 14px);
-    border-radius: clamp(10px, calc(16px * var(--u)), 16px);
-    border: solid rgba(140, 180, 100, .42);
-    border-width: clamp(1px, calc(1.5px * var(--u)), 1.5px);
-    background: rgba(255, 255, 255, .6);
-    cursor: pointer;
-    color: #5d7045;
-    transition: background .25s ease, border-color .25s ease;
-    display: block;
-    width: 100%;
-  }
-
-  .lv-name {
-    display: block;
-    font-size: clamp(13px, calc(17px * var(--u)), 17px);
-    font-weight: 600;
-    letter-spacing: .08em;
-  }
-
-  .lv-meta {
-    display: block;
-    margin-top: clamp(2px, calc(4px * var(--u)), 4px);
-    font-size: clamp(10px, calc(12.5px * var(--u)), 12.5px);
-    color: #8a9b70;
-    letter-spacing: .02em;
-  }
-
-  /* ---------- 粒子 ---------- */
-  .spark {
-    position: fixed;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 99;
-    animation: burst 1.15s cubic-bezier(.18,.72,.32,1) forwards;
-  }
-
-  @keyframes burst {
-    0%   { transform: translate(-50%, -50%) scale(.35); opacity: 0; }
-    14%  { opacity: 1; }
-    100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(.9); opacity: 0; }
-  }
+/* ---------- 8. 适配 ---------- */
+@media (max-height:700px){
+  .mascot{display:none}
+  .home-inner{gap:9px}
+  #screen-home{padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .title{font-size:30px}
+  .panel{padding:11px;gap:6px}
+  .mode-card{padding:8px 6px}
+  .mode-icon{font-size:22px}
+  .btn-primary{padding:13px 18px}
+  .parent-tip{padding-top:4px}
+}
+@media (max-height:600px){
+  .home-inner{gap:8px}
+  .parent-tip{display:none}
+}
 </style>
 </head>
 <body>
 
-<div class="frame" id="frame">
+<!-- ==================== 首页 ==================== -->
+<section class="screen active" id="screen-home">
+  <div class="home-inner">
+    <header class="brand">
+      <div class="brand-badge">记忆小侦探</div>
+      <h1 class="title">找到<em>那颗糖</em></h1>
+      <p class="subtitle">记住位置 · 洗牌后找出来</p>
+    </header>
 
-    <!-- 背景 -->
-    <svg class="bg" viewBox="0 0 720 1280" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#fdfbe4"/>
-          <stop offset="34%" stop-color="#f5f7d0"/>
-          <stop offset="68%" stop-color="#e4efba"/>
-          <stop offset="100%" stop-color="#d2e7a6"/>
-        </linearGradient>
-        <radialGradient id="g-sun" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#fff7c6" stop-opacity=".95"/>
-          <stop offset="58%" stop-color="#fff4bb" stop-opacity=".32"/>
-          <stop offset="100%" stop-color="#fff4bb" stop-opacity="0"/>
-        </radialGradient>
-        <linearGradient id="g-h1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#dcecb8"/>
-          <stop offset="100%" stop-color="#cbe2a0"/>
-        </linearGradient>
-        <linearGradient id="g-h2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#c7df9a"/>
-          <stop offset="100%" stop-color="#b3d385"/>
-        </linearGradient>
-        <linearGradient id="g-h3" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#b1d284"/>
-          <stop offset="100%" stop-color="#9ac46b"/>
-        </linearGradient>
-      </defs>
-
-      <rect width="720" height="1280" fill="url(#g-sky)"/>
-      <ellipse cx="360" cy="340" rx="460" ry="400" fill="url(#g-sun)"/>
-
-      <g fill="#fffef2" opacity=".5">
-        <ellipse cx="150" cy="268" rx="92" ry="25"/>
-        <ellipse cx="206" cy="252" rx="58" ry="19"/>
-        <ellipse cx="588" cy="404" rx="104" ry="27"/>
-        <ellipse cx="528" cy="388" rx="62" ry="20"/>
-        <ellipse cx="360" cy="148" rx="76" ry="18"/>
-      </g>
-
-      <path d="M0 1010 Q 180 936 372 992 T 720 976 V1280 H0 Z" fill="url(#g-h1)"/>
-      <path d="M0 1096 Q 210 1018 410 1082 T 720 1068 V1280 H0 Z" fill="url(#g-h2)" opacity=".96"/>
-      <path d="M0 1186 Q 250 1112 486 1174 T 720 1180 V1280 H0 Z" fill="url(#g-h3)" opacity=".96"/>
-
-      <g opacity=".7">
-        <g transform="translate(84,1106)">
-          <rect x="-6" y="-6" width="12" height="108" rx="6" fill="#c9ae7e"/>
-          <circle cx="0" cy="-32" r="56" fill="#a8d07e"/>
-          <circle cx="-36" cy="6" r="36" fill="#b8dc90"/>
-          <circle cx="38" cy="2" r="40" fill="#9cc96f"/>
-        </g>
-        <g transform="translate(642,1088)">
-          <rect x="-6" y="-6" width="12" height="118" rx="6" fill="#c9ae7e"/>
-          <circle cx="0" cy="-34" r="60" fill="#a6cf7c"/>
-          <circle cx="42" cy="4" r="38" fill="#b7dc8e"/>
-          <circle cx="-38" cy="0" r="34" fill="#9bc86e"/>
-        </g>
-      </g>
-
-      <g fill="#fffbe0" opacity=".8">
-        <circle cx="176" cy="1218" r="4.5"/>
-        <circle cx="300" cy="1246" r="3.6"/>
-        <circle cx="470" cy="1230" r="4"/>
-        <circle cx="594" cy="1252" r="4.6"/>
-        <circle cx="80" cy="1246" r="3.4"/>
-      </g>
-    </svg>
-
-    <div class="petals" id="petals" aria-hidden="true"></div>
-
-    <div class="topbar">
-      <button class="chip" id="levelBtn" type="button">选关</button>
-      <button class="chip" id="restartBtn" type="button">重开</button>
+    <div class="mascot" aria-hidden="true">
+      <div class="mascot-candy">🍬</div>
+      <span class="spark s1">✨</span>
+      <span class="spark s2">⭐</span>
+      <span class="spark s3">💫</span>
     </div>
 
-    <!-- 主体 -->
-    <main class="app">
-      <header>
-        <h1>找到那颗糖</h1>
-        <p class="status">
-          <span id="levelTag">第 1 关</span>
-          <span class="sep">·</span>
-          <span class="lives" id="livesTag">机会 3 / 3</span>
-        </p>
-        <p class="hint" id="hint">记住糖果在哪张牌上</p>
-      </header>
-      <div class="stage" id="stage"></div>
-      <div class="actions">
-        <button class="shuffle-btn" id="shuffleBtn" type="button" disabled>洗牌</button>
-      </div>
-    </main>
+    <div class="panel">
+      <div class="panel-label">选玩法</div>
+      <div class="mode-row" id="modeRow"></div>
 
-    <!-- 结果弹窗 -->
-    <div class="overlay" id="overlay">
-      <div class="modal">
-        <h2 id="modalTitle">没找到糖果</h2>
-        <p id="modalText"></p>
-        <div class="modal-btns">
-          <button class="btn-primary" id="modalPrimary" type="button">重试本关</button>
-          <button class="btn-ghost" id="modalSecondary" type="button">选择关卡</button>
-        </div>
-      </div>
+      <div class="panel-label" style="margin-top:4px">选主题</div>
+      <div class="theme-row" id="themeRow"></div>
     </div>
 
-    <!-- 选关面板 -->
-    <div class="overlay" id="levelSelect">
-      <div class="panel">
-        <h2>选择难度</h2>
-        <p class="panel-sub">十关递进 · 找到藏在牌背面的那颗糖</p>
-        <div class="level-grid" id="levelGrid"></div>
-        <button class="btn-ghost" id="levelClose" type="button">返回</button>
-      </div>
-    </div>
+    <button class="btn-primary" id="startBtn" type="button">
+      开始第 <b>1</b> 关 <span class="arrow">▶</span>
+    </button>
 
+    <button class="btn-ghost" id="levelsBtn" type="button">
+      📋 关卡列表 <span class="ghost-sub" id="levelsBtnSub">已通关 0 关</span>
+    </button>
+
+    <button class="save-warn" id="saveWarnBtn" type="button" aria-label="存档说明：记录仅存于本机缓存，点击查看备份方式">
+      <span class="sw-icon" aria-hidden="true">💾</span>
+      <span class="sw-text">当前记录仅存于本机缓存，清除缓存将导致记录丢失</span>
+      <span class="sw-more" aria-hidden="true">›</span>
+    </button>
+
+    <div class="home-stats" id="homeStats"></div>
+
+    <button class="parent-tip" id="parentLink" type="button">
+      <b>家长提示</b>：陪孩子一起说出卡片的名字，记得更牢哦 · 点击查看小贴士
+    </button>
+  </div>
+</section>
+
+<!-- ==================== 游戏页 ==================== -->
+<section class="screen" id="screen-game">
+  <div class="hud-top">
+    <button class="icon-btn" id="homeBtn" type="button" aria-label="回到首页">🏠</button>
+    <div class="hud-mid">
+      <div class="hud-level" id="hudLevel">第 1 关</div>
+      <div class="hud-theme" id="hudTheme">水果乐园</div>
+    </div>
+    <button class="icon-btn" id="muteBtn" type="button" aria-label="声音开关">🔊</button>
+    <button class="icon-btn" id="pauseBtn" type="button" aria-label="暂停">⏸</button>
+  </div>
+
+  <div class="hud-sub">
+    <div class="hearts" id="hearts" aria-label="生命值"></div>
+    <div class="chip" id="targetChip"></div>
+    <div class="chip hidden" id="progressChip"></div>
+  </div>
+
+  <div class="timer" id="timer">
+    <div class="timer-num" id="countdown">3</div>
+    <div class="timer-track"><i id="timerFill"></i></div>
+  </div>
+
+  <div class="stage">
+    <div class="board" id="board"></div>
+    <div class="status" id="statusText" aria-live="polite">准备好啦～</div>
+  </div>
+</section>
+
+<!-- ==================== 过关庆祝 ==================== -->
+<div class="overlay" id="winOverlay">
+  <div class="sheet-card">
+    <div class="cel-rays"></div>
+    <div class="cel-level" id="celLevel">第 1 关</div>
+    <div class="cel-emoji" id="celEmoji">🎉</div>
+    <h2 class="cel-title" id="celTitle">太棒了！</h2>
+    <p class="cel-sub" id="celSub"></p>
+    <div class="cel-stars" id="celStars"></div>
+    <div class="cel-star-note" id="celStarNote"></div>
+    <div class="cel-learn" id="celLearn"></div>
+    <button class="btn-primary" id="nextBtn" type="button">下一关 ▶</button>
+  </div>
 </div>
 
+<!-- ==================== 关卡列表 ==================== -->
+<div class="overlay" id="levelsOverlay">
+  <div class="sheet-card levels-sheet">
+    <div class="levels-head">
+      <button class="chap-btn" id="chapPrev" type="button" aria-label="上一章">‹</button>
+      <div class="chap-title">
+        <b id="chapTitle">第 1 章</b>
+        <small id="chapSub">第 1-10 关</small>
+      </div>
+      <button class="chap-btn" id="chapNext" type="button" aria-label="下一章">›</button>
+    </div>
+
+    <div class="lv-grid" id="levelGrid"></div>
+
+    <div class="levels-foot">
+      <span class="levels-stat" id="levelsStat">⭐ 0 / 30</span>
+      <button class="btn-ghost levels-close" id="levelsClose" type="button">返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 复活 / 鼓励 ==================== -->
+<div class="overlay" id="rescueOverlay">
+  <div class="sheet-card">
+    <div class="sheet-emoji">🌱</div>
+    <h2 class="sheet-title">没关系，再看一次</h2>
+    <p class="sheet-text">糖果躲起来啦～<br>这次我们少放几张牌，慢慢来。</p>
+    <div class="sheet-btns">
+      <button class="btn-primary" id="rescueRetry" type="button">再试一次 🔄</button>
+      <button class="btn-ghost" id="rescueHome" type="button">先回首页</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 暂停 ==================== -->
+<div class="overlay" id="pauseOverlay">
+  <div class="sheet-card">
+    <div class="sheet-emoji">⏸️</div>
+    <h2 class="sheet-title">休息一下</h2>
+    <p class="sheet-text">准备好了就继续吧～</p>
+    <div class="sheet-btns">
+      <button class="btn-primary" id="pauseResume" type="button">继续玩 ▶</button>
+      <button class="btn-ghost" id="pauseLevels" type="button">关卡列表</button>
+      <button class="btn-ghost" id="pauseRestart" type="button">重新玩这一关</button>
+      <button class="btn-ghost" id="pauseHome" type="button">回到首页</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 家长小贴士 ==================== -->
+<div class="overlay" id="parentOverlay">
+  <div class="sheet-card parent-sheet">
+    <h3>👨‍👩‍👧 家长小贴士</h3>
+    <p class="parent-note">
+      适龄 <b>4-8 岁</b>。游戏训练<b>图形识别、配对归类与工作记忆</b>，没有时间压力，也不会有"失败"结局——
+      生命值用完只会温柔地重来一次。<br><br>
+      建议单次游玩 <b>不超过 10 分钟</b>，每关约 20-40 秒。洗牌速度最高 <b>3 倍速</b>，孩子可以用眼睛跟上。<br><br>
+      进度<b>自动保存</b>在这台设备的浏览器里，清除浏览器数据会一并清空。换设备或换浏览器时，请先用下面的<b>导出</b>按钮备份。
+    </p>
+
+    <div class="setting-row">
+      <div>游戏音效<small>啵啵声、和弦与洗牌声</small></div>
+      <button class="switch" id="switchSound" type="button">开</button>
+    </div>
+    <div class="setting-row">
+      <div>语音鼓励<small>过关时朗读一句夸奖</small></div>
+      <button class="switch" id="switchVoice" type="button">开</button>
+    </div>
+    <div class="setting-row">
+      <div>存档备份<small id="saveInfo">自动保存 · 仅存本机</small></div>
+      <div class="backup-btns">
+        <button class="mini-btn" id="exportBtn" type="button">导出</button>
+        <button class="mini-btn" id="importBtn" type="button">导入</button>
+      </div>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <div class="setting-row" style="border-bottom:none">
+      <div>游戏进度<small id="progressText">第 1 关</small></div>
+      <button class="switch warn" id="resetProgress" type="button">重置</button>
+    </div>
+
+    <div class="parent-actions">
+      <button class="btn-primary" id="parentClose" type="button">知道啦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 提示条 ==================== -->
+<div class="unlock-toast" id="unlockToast">
+  <span class="toast-icon" id="toastIcon">🦊</span>
+  <div class="toast-text">
+    <b id="toastTitle">解锁新主题</b>
+    <small id="toastName">动物森林</small>
+  </div>
+  <button class="toast-btn" id="toastBtn" type="button">好耶</button>
+</div>
+
+<canvas id="fx"></canvas>
+
 <script>
+/* ============================================================
+ *  找到那颗糖 · 记忆乐园  v2.0
+ *  ------------------------------------------------------------
+ *  文件结构：
+ *    1. CONFIG      —— 所有可调参数（难度、主题素材、音效音量）
+ *    2. 工具函数
+ *    3. Save        —— localStorage 存档
+ *    4. Sound       —— Web Audio 合成音效
+ *    5. FX          —— Canvas 星星彩带粒子
+ *    6. S           —— 运行时状态
+ *    7. 渲染层      —— 首页 / HUD / 牌桌
+ *    8. 流程层      —— 发牌 / 记忆 / 洗牌 / 判定 / 过关 / 复活
+ *    9. 事件绑定 & 启动
+ *
+ *  想加主题？只要在 CONFIG.themes 里追加一项，items 至少 12 个即可。
+ * ============================================================ */
 (function () {
   'use strict';
 
-  const DESIGN_W = 720;
+  /* ==========================================================
+   * 1. CONFIG —— 游戏配置区（改这里就够了）
+   * ========================================================== */
+  const CONFIG = {
+    version: '2.0.0',
+    saveKey: 'tangguo.save.v3',          // 主快照
+    saveBackupKey: 'tangguo.save.v3.bak', // 上一次成功快照（影子备份）
+    saveCorruptKey: 'tangguo.save.v3.corrupt', // 解析失败的原文，便于排查
+    legacySaveKey: 'tangguo_memory_v2',   // v2 旧存档，读取时自动迁移
 
-  /* ---------- 十个关卡 ---------- */
-  // count: 牌数 / cols: 网格列数（0 = 五边形）/ attempts: 点击机会 / speed: 洗牌速度倍数
-  const LEVELS = [
-    { count: 5,  cols: 0, attempts: 3, speed: 2.0 },
-    { count: 7,  cols: 4, attempts: 3, speed: 2.0 },
-    { count: 7,  cols: 4, attempts: 3, speed: 3.0 },
-    { count: 9,  cols: 3, attempts: 3, speed: 3.0 },
-    { count: 9,  cols: 3, attempts: 3, speed: 4.0 },
-    { count: 11, cols: 4, attempts: 2, speed: 4.5 },
-    { count: 12, cols: 4, attempts: 2, speed: 5.5 },
-    { count: 12, cols: 4, attempts: 2, speed: 6.5 },
-    { count: 14, cols: 5, attempts: 2, speed: 8.0 },
-    { count: 15, cols: 5, attempts: 2, speed: 10.0 }
-  ];
+    /* ---------- 玩法模式 ---------- */
+    modes: {
+      find: {
+        name: '找糖果',
+        icon: '🍬',
+        desc: '记住位置，洗牌后找出来'
+      },
+      pair: {
+        name: '翻牌配对',
+        icon: '🃏',
+        desc: '翻开两张一样的牌'
+      }
+    },
 
-  const frame = document.getElementById('frame');
-  const stage = document.getElementById('stage');
-  const hint = document.getElementById('hint');
-  const levelTag = document.getElementById('levelTag');
-  const livesTag = document.getElementById('livesTag');
-  const shuffleBtn = document.getElementById('shuffleBtn');
-  const levelBtn = document.getElementById('levelBtn');
-  const restartBtn = document.getElementById('restartBtn');
+    /* ---------- 主题包 ----------
+       unlockLevel：达到该关卡时解锁（每 10 关一个新主题）
+       items：g = 显示图形，n = 中文名称（教育认知用）
+              数字主题额外带 kind:'num' 与 color，用大号数字呈现
+    ---------------------------------- */
+    themes: [
+      {
+        id: 'fruit',
+        name: '水果乐园',
+        icon: '🍎',
+        unlockLevel: 1,
+        colors: {
+          accent: '#FF8FA3', accent2: '#FFC6D2', deep: '#D94F6B',
+          soft: '#FFE6EC', bg1: '#FFF8F3', bg2: '#FFEDF3'
+        },
+        items: [
+          { g: '🍎', n: '苹果' }, { g: '🍓', n: '草莓' }, { g: '🍊', n: '橘子' },
+          { g: '🍇', n: '葡萄' }, { g: '🍉', n: '西瓜' }, { g: '🍌', n: '香蕉' },
+          { g: '🍒', n: '樱桃' }, { g: '🍑', n: '桃子' }, { g: '🍐', n: '梨' },
+          { g: '🍍', n: '菠萝' }, { g: '🥝', n: '猕猴桃' }, { g: '🥭', n: '芒果' },
+          { g: '🫐', n: '蓝莓' }, { g: '🍋', n: '柠檬' }, { g: '🥥', n: '椰子' },
+          { g: '🍅', n: '番茄' }
+        ]
+      },
+      {
+        id: 'animal',
+        name: '动物森林',
+        icon: '🦊',
+        unlockLevel: 11,
+        colors: {
+          accent: '#5FCFA0', accent2: '#B6EDD6', deep: '#2E9C73',
+          soft: '#E2F8EE', bg1: '#F4FCF7', bg2: '#E9F7FF'
+        },
+        items: [
+          { g: '🐶', n: '小狗' }, { g: '🐱', n: '小猫' }, { g: '🐭', n: '小老鼠' },
+          { g: '🐹', n: '仓鼠' }, { g: '🐰', n: '小兔' }, { g: '🦊', n: '狐狸' },
+          { g: '🐻', n: '小熊' }, { g: '🐼', n: '熊猫' }, { g: '🐨', n: '考拉' },
+          { g: '🐯', n: '老虎' }, { g: '🦁', n: '狮子' }, { g: '🐮', n: '小牛' },
+          { g: '🐷', n: '小猪' }, { g: '🐸', n: '青蛙' }, { g: '🐵', n: '猴子' },
+          { g: '🦄', n: '独角兽' }
+        ]
+      },
+      {
+        id: 'number',
+        name: '数字启蒙',
+        icon: '🔢',
+        unlockLevel: 21,
+        colors: {
+          accent: '#7FA8FF', accent2: '#C3D6FF', deep: '#4A72D6',
+          soft: '#E7EEFF', bg1: '#F3F8FF', bg2: '#F6F1FF'
+        },
+        items: [
+          { g: '1', n: '一', kind: 'num', color: '#FF8FA3' },
+          { g: '2', n: '二', kind: 'num', color: '#FFA45C' },
+          { g: '3', n: '三', kind: 'num', color: '#F3C03E' },
+          { g: '4', n: '四', kind: 'num', color: '#7FCF6A' },
+          { g: '5', n: '五', kind: 'num', color: '#4FC3B8' },
+          { g: '6', n: '六', kind: 'num', color: '#59B6F0' },
+          { g: '7', n: '七', kind: 'num', color: '#7FA8FF' },
+          { g: '8', n: '八', kind: 'num', color: '#9A8CFF' },
+          { g: '9', n: '九', kind: 'num', color: '#C08BFF' },
+          { g: '10', n: '十', kind: 'num', color: '#FF8FD0' },
+          { g: '11', n: '十一', kind: 'num', color: '#FF7A7A' },
+          { g: '12', n: '十二', kind: 'num', color: '#4FC3C7' }
+        ]
+      },
+      {
+        id: 'vehicle',
+        name: '交通工具',
+        icon: '🚌',
+        unlockLevel: 31,
+        colors: {
+          accent: '#FFAE52', accent2: '#FFD9A8', deep: '#D9821F',
+          soft: '#FFF0DC', bg1: '#FFFAEE', bg2: '#EEF9FF'
+        },
+        items: [
+          { g: '🚗', n: '小汽车' }, { g: '🚕', n: '出租车' }, { g: '🚌', n: '公交车' },
+          { g: '🚑', n: '救护车' }, { g: '🚒', n: '消防车' }, { g: '🚓', n: '警车' },
+          { g: '🚜', n: '拖拉机' }, { g: '🚲', n: '自行车' }, { g: '🛴', n: '滑板车' },
+          { g: '🚂', n: '火车' }, { g: '✈️', n: '飞机' }, { g: '🚀', n: '火箭' },
+          { g: '🚁', n: '直升机' }, { g: '⛵', n: '帆船' }, { g: '🚤', n: '快艇' },
+          { g: '🛵', n: '摩托车' }
+        ]
+      }
+    ],
 
-  const overlay = document.getElementById('overlay');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalText = document.getElementById('modalText');
-  const modalPrimary = document.getElementById('modalPrimary');
-  const modalSecondary = document.getElementById('modalSecondary');
+    /* ---------- 关卡与难度曲线 ---------- */
+    level: {
+      // 牌数阶梯：level <= upTo 时使用 cards 张
+      cardTiers: [
+        { upTo: 5,   cards: 4  },
+        { upTo: 10,  cards: 6  },
+        { upTo: 20,  cards: 8  },
+        { upTo: 30,  cards: 10 },
+        { upTo: 9999, cards: 12 }
+      ],
+      // 记忆（亮牌）时间：基础 + 每多一张牌加时 - 随关卡微降
+      // 儿童友好：牌越多给的时间越长，任何关卡都不少于 min
+      memorize: { base: 2800, perCard: 180, step: 40, min: 2400, max: 4000 },
+      // 配对模式偷看时间（同理，牌多给得更多）
+      peek: { base: 1800, perCard: 220, step: 15, min: 1800, max: 4500 },
+      shuffle: {
+        baseMs: 900,        // 1 倍速时单趟交换耗时
+        minMs: 300,         // 最快 3 倍速 ≈ 300ms，儿童可跟上
+        speedStep: 0.12,    // 每关增加的速度
+        maxSpeed: 3,        // ★ 速度硬上限：不超过 3 倍速
+        passes: [           // 洗牌趟数
+          { upTo: 5,   passes: 1 },
+          { upTo: 11,  passes: 2 },
+          { upTo: 9999, passes: 3 }
+        ]
+      }
+    },
 
-  const levelSelect = document.getElementById('levelSelect');
-  const levelGrid = document.getElementById('levelGrid');
-  const levelClose = document.getElementById('levelClose');
+    /* ---------- 关卡名称 ----------
+       每章 10 个名字，按关卡号固定（与主题无关），方便孩子记住"我卡在哪一关"。
+       章节数无限时按 4 组循环使用。 */
+    levelsPerChapter: 10,
+    levelNames: [
+      ['初次见面', '小手热身', '眼睛亮亮', '记性真好', '洗牌小旋风', '糖果捉迷藏', '记忆加速', '小侦探出动', '超级大脑', '章节小考'],
+      ['森林清晨', '动物排队', '谁藏起来了', '尾巴认亲', '树洞记忆', '迷雾洗牌', '火眼金睛', '记忆小超人', '森林寻宝', '章节小考'],
+      ['数字排队', '数一数二', '大小比一比', '数字躲猫猫', '快速洗牌', '找找单数', '数字接力', '记忆计算器', '小小数学家', '章节小考'],
+      ['车库出发', '马路观察', '交通标志', '谁跑得快', '轮子转转', '洗牌高速路', '方向小达人', '交通指挥官', '环城旅行', '章节小考']
+    ],
 
-  const cards = [];
-  let slotOf = [];
-  let layoutCfg = null;
+    /* ---------- 生命值与容错 ---------- */
+    lives: {
+      max: 3,               // 初始 3 颗心
+      refillOnMatch: true   // 配对成功回 1 颗心（配对模式）
+    },
+    mercy: {
+      reducePerRetry: 2,    // 生命耗尽重来时，临时少 2 张牌
+      maxReduce: 6          // 最多减到 6 张（12 → 6）
+    },
 
-  let levelIdx = 0;
-  let count = 5;
-  let targetIdx = 0;
-  let targetName = '';
-  let targetBody = '';
-  let attemptsLeft = 3;
-  let speed = 2;
+    /* ---------- 音频 ---------- */
+    audio: {
+      volume: 0.55          // 0 ~ 1
+    }
+  };
 
-  let phase = 'idle';
-  let runId = 0;
-  let modalActions = { primary: null, secondary: null };
-
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  /* ==========================================================
+   * 2. 工具函数
+   * ========================================================== */
+  const $ = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const randInt = (n) => Math.floor(Math.random() * n);
+  const pick = (arr) => arr[randInt(arr.length)];
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-  /* ---------- 画布缩放 ---------- */
-  function fitFrame() {
-    const w = frame.clientWidth || DESIGN_W;
-    frame.style.setProperty('--u', (w / DESIGN_W).toFixed(4));
+  function shuffle(list) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = randInt(i + 1);
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
   }
 
-  /* ---------- 螺旋（棒棒糖花纹） ---------- */
-  function spiralPath(cx, cy, turns, r0, r1, steps) {
-    steps = steps || 220;
-    let d = '';
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const a = -Math.PI / 2 + t * turns * Math.PI * 2;
-      const r = r0 + (r1 - r0) * t;
-      const x = cx + Math.cos(a) * r;
-      const y = cy + Math.sin(a) * r;
-      d += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ' ' + y.toFixed(2);
-    }
-    return d;
+  // 卡片的"名字"：🍓 草莓 / 数字 3
+  function label(item) {
+    if (!item) return '';
+    return item.kind === 'num' ? ('数字 ' + item.g) : (item.g + ' ' + item.n);
   }
 
-  const SPIRAL_D = spiralPath(50, 38, 2.45, 4.2, 17.6);
+  // 完整名字（庆祝弹窗用，数字带中文读法，强化认知）
+  function labelFull(item) {
+    if (!item) return '';
+    return item.kind === 'num'
+      ? ('数字 ' + item.g + '（' + item.n + '）')
+      : (item.g + ' ' + item.n);
+  }
 
-  /* ---------- 糖果图案 ---------- */
-  const PATTERNS = [
-    {
-      name: '棒棒糖',
-      body: `
-        <circle cx="50" cy="42" r="36" fill="#fdf3d4" opacity=".72"/>
-        <circle cx="50" cy="38" r="26" fill="#fff7e0" stroke="#edc47b" stroke-width="2.4"/>
-        <path d="${SPIRAL_D}" fill="none" stroke="#f0a95f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M50 64 L45 90" stroke="#e2cda1" stroke-width="5.4" stroke-linecap="round"/>
-        <g fill="#f3c86d" opacity=".8">
-          <circle cx="22" cy="24" r="2.4"/><circle cx="79" cy="30" r="2"/><circle cx="72" cy="76" r="2.2"/>
-        </g>`
-    },
-    {
-      name: '薄荷糖',
-      body: `
-        <circle cx="50" cy="50" r="27" fill="#f7fae8" stroke="#a9c77e" stroke-width="2.6"/>
-        <g stroke="#cfe3a6" stroke-width="4.2" stroke-linecap="round">
-          <path d="M50 50 L50 27"/><path d="M50 50 L66.3 33.7"/><path d="M50 50 L73 50"/>
-          <path d="M50 50 L66.3 66.3"/><path d="M50 50 L50 73"/><path d="M50 50 L33.7 66.3"/>
-          <path d="M50 50 L27 50"/><path d="M50 50 L33.7 33.7"/>
-        </g>
-        <circle cx="50" cy="50" r="6.5" fill="#f0cf87" stroke="#e2b96a" stroke-width="1.6"/>`
-    },
-    {
-      name: '软糖',
-      body: `
-        <rect x="25" y="25" width="50" height="50" rx="15" fill="#f8cbae" stroke="#e4a985" stroke-width="2.6"/>
-        <path d="M36 39 q 7 -6 15 -4" fill="none" stroke="#ffe6d5" stroke-width="3.4" stroke-linecap="round"/>
-        <g fill="#fff2e7" opacity=".92">
-          <circle cx="60" cy="58" r="2.2"/><circle cx="46" cy="64" r="1.7"/><circle cx="55" cy="46" r="1.5"/>
-        </g>`
-    },
-    {
-      name: '星星糖',
-      body: `
-        <path d="M50 22 l8.2 16.6 18.3 2.7 -13.2 12.9 3.1 18.2 -16.4 -8.6 -16.4 8.6 3.1 -18.2 -13.2 -12.9 18.3 -2.7 z"
-          fill="#f9dd93" stroke="#e7bd64" stroke-width="2.6" stroke-linejoin="round"/>
-        <circle cx="50" cy="49" r="4.6" fill="#fff8dd" opacity=".95"/>`
-    },
-    {
-      name: '奶糖',
-      body: `
-        <path d="M31 50 L15 35 L15 65 Z" fill="#f9dde7" stroke="#dea7ba" stroke-width="2.4" stroke-linejoin="round"/>
-        <path d="M69 50 L85 35 L85 65 Z" fill="#f9dde7" stroke="#dea7ba" stroke-width="2.4" stroke-linejoin="round"/>
-        <ellipse cx="50" cy="50" rx="21" ry="16" fill="#f6c8d7" stroke="#dea7ba" stroke-width="2.6"/>
-        <path d="M39 43 q11 7 22 0" fill="none" stroke="#eaaec1" stroke-width="2.6" stroke-linecap="round"/>
-        <path d="M39 57 q11 7 22 0" fill="none" stroke="#eaaec1" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>`
-    }
+  // 鼓励文案
+  const PRAISE = [
+    { e: '🎉', t: '太棒了！', s: '你的记忆力像大象一样好！' },
+    { e: '🏆', t: '找到啦！', s: '小侦探的眼睛真厉害！' },
+    { e: '🌟', t: '真厉害！', s: '小脑袋转得可真快！' },
+    { e: '🍭', t: '好棒呀！', s: '糖果都被你找到了！' },
+    { e: '🎈', t: '成功啦！', s: '你记住了每一张牌的位置！' },
+    { e: '🐘', t: '太厉害了！', s: '大象都夸你记性好！' }
   ];
 
-  const LEAF_BADGE = `
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M50 17C62 28 71 42 71 55c0 14-9 24-21 28-12-4-21-14-21-28 0-13 9-27 21-38z" fill="#8cc266"/>
-      <path d="M50 80V28" stroke="#699f47" stroke-width="2.8" stroke-linecap="round"/>
-      <path d="M50 44l9 5M50 56l9 5M50 68l9 5M50 44l-9 5M50 56l-9 5" fill="none" stroke="#7bb354" stroke-width="2.1" stroke-linecap="round"/>
-    </svg>`;
+  /* ==========================================================
+   * 3. 存档（自动保存 + 主备双键 + 校验迁移 + 导入导出）
+   * ----------------------------------------------------------
+   * 存储结构（全部在 localStorage，同源）：
+   *   tangguo.save.v3         主快照 { app, schema, savedAt, data }
+   *   tangguo.save.v3.bak     上一次写入成功的完整快照（影子备份）
+   *   tangguo.save.v3.corrupt 解析失败时的原始字符串（最多 4KB，便于排查）
+   *   tangguo_memory_v2       旧版存档，仅读取迁移，不再写入
+   *
+   * 读：主快照 → 备份 → 旧存档 → 默认值；逐级校验，坏字段单条丢弃
+   * 写：任何操作后 markDirty() 立即同步落盘（约 1KB，耗时 <1ms）
+   * ========================================================== */
+  const DEFAULT_SAVE = {
+    version: 3,
+    level: 1,
+    maxLevel: 1,
+    mode: 'find',
+    themeId: 'fruit',
+    muted: false,
+    voice: true,
+    totalStars: 0,
+    // 每关的最好成绩：{ "3": 2 } 表示第 3 关拿到过 2 颗星。
+    // 只增不减，重玩同一关取 max()，所以漏掉的星星永远可以补回来。
+    starsByLevel: {},
+    unlocked: ['fruit']
+  };
 
-  /* ---------- 构建卡片 ---------- */
-  function buildCards(n) {
-    stage.innerHTML = '';
-    cards.length = 0;
+  const Save = {
+    data: Object.assign({}, DEFAULT_SAVE, { starsByLevel: {} }),
+    loadedAt: 0,      // 内存快照对应的 savedAt，用于判断"别的标签页是否更新过"
+    lastSavedAt: 0,
+    dirty: false,
+    failed: false,    // true = 本机写不进去（无痕模式 / 配额满）
+    source: 'default', // primary | backup | legacy | default
 
-    for (let i = 0; i < n; i++) {
-      const isTarget = i === targetIdx;
-      const el = document.createElement('div');
-      el.className = 'card';
-      el.dataset.idx = String(i);
-      el.style.transition = 'none';
-      el.innerHTML = `
-        <div class="card-inner">
-          <div class="face front ${isTarget ? 'has-candy' : 'blank'}">
-            ${isTarget ? '<svg class="front-ico" viewBox="0 0 100 100" aria-hidden="true">' + targetBody + '</svg>' : ''}
-          </div>
-          <div class="face back">
-            <div class="badge">
-              <div class="badge-inner">${LEAF_BADGE}</div>
-            </div>
-          </div>
-        </div>`;
-      stage.appendChild(el);
-      cards.push({ el });
-    }
-  }
+    /* ---------------- 读取 ---------------- */
+    load() {
+      let env = this.readEnvelope(CONFIG.saveKey, 'primary');
+      if (!env) env = this.readEnvelope(CONFIG.saveBackupKey, 'backup');
+      if (!env) env = this.readLegacy();
 
-  /* ---------- 阵型 ---------- */
-  function pentagon(count, cw, ch, stageW, stageH) {
-    const rotMax = 11 * Math.PI / 180;
-    const bw = cw * Math.cos(rotMax) + ch * Math.sin(rotMax);
-    const R = Math.max(100, Math.min(
-      (stageW / 2 - bw / 2 - 14) / 0.951,
-      stageH / 2 - ch / 2 - 14
-    ));
+      this.data = this.normalize(env ? env.data : null);
+      this.loadedAt = env ? env.savedAt : 0;
+      this.lastSavedAt = this.loadedAt;
+      const src = env ? env.source : 'default';
+      this.source = src;
 
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-      const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
-      arr.push({
-        x: Math.cos(a) * R,
-        y: Math.sin(a) * R,
-        rot: Math.sin(a + Math.PI / 2) * 11
+      // 迁移/修复后立刻补一份完整快照
+      this.dirty = true;
+      this.flush();
+      this.source = src;   // 保留"从备份恢复"的事实，供启动提示使用
+      return src;
+    },
+
+    readKey(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    },
+
+    // 写失败要能感知：这里故意不吞异常，由 flush 统一兜底
+    writeKey(key, value) {
+      localStorage.setItem(key, value);
+    },
+
+    removeKey(key) {
+      try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+    },
+
+    stashCorrupt(raw) {
+      try {
+        localStorage.setItem(CONFIG.saveCorruptKey, String(raw).slice(0, 4096));
+      } catch (e) { /* 配额不足就放弃留证 */ }
+    },
+
+    parseEnvelope(raw, source) {
+      if (!raw) return null;
+      try {
+        const obj = JSON.parse(raw);
+        if (!obj || typeof obj !== 'object') throw new Error('bad');
+        // 兼容"直接存 data"的裸格式
+        const data = (obj.data && typeof obj.data === 'object') ? obj.data : obj;
+        return {
+          data: data,
+          savedAt: parseInt(obj.savedAt, 10) || 0,
+          source: source || 'primary'
+        };
+      } catch (e) {
+        this.stashCorrupt(raw);
+        return null;
+      }
+    },
+
+    readEnvelope(key, source) {
+      const raw = this.readKey(key);
+      return raw ? this.parseEnvelope(raw, source) : null;
+    },
+
+    readLegacy() {
+      const raw = this.readKey(CONFIG.legacySaveKey);
+      if (!raw) return null;
+      try {
+        const data = JSON.parse(raw);
+        if (!data || typeof data !== 'object') throw new Error('bad');
+        return { data: data, savedAt: 0, source: 'legacy' };
+      } catch (e) {
+        this.stashCorrupt(raw);
+        return null;
+      }
+    },
+
+    /* ---------------- 校验 / 归一化 ----------------
+       不管数据来自哪里（本机、备份、旧版、导入文件），都从这里过一遍：
+       非法关卡号、非 0-3 的星数直接丢弃，而不是让整份存档作废。 */
+    normalize(input) {
+      const raw = (input && typeof input === 'object') ? input : {};
+
+      const stars = {};
+      const src = (raw.starsByLevel && typeof raw.starsByLevel === 'object') ? raw.starsByLevel : {};
+      Object.keys(src).forEach((k) => {
+        const lv = parseInt(k, 10);
+        const s = clamp(parseInt(src[k], 10) || 0, 0, 3);
+        if (lv >= 1 && lv <= 9999 && s > 0) stars[lv] = s;
       });
+
+      // 旧存档只有累计星数：按已通关关卡回填，保证总数不丢
+      if (Object.keys(stars).length === 0 && (parseInt(raw.totalStars, 10) || 0) > 0) {
+        let left = Math.min(parseInt(raw.totalStars, 10) || 0, 9999);
+        const maxLv = Math.max(1, parseInt(raw.maxLevel, 10) || 1);
+        for (let i = 1; i < maxLv && left > 0; i++) {
+          const s = Math.min(3, left);
+          stars[i] = s;
+          left -= s;
+        }
+      }
+
+      let maxLevel = clamp(parseInt(raw.maxLevel, 10) || 1, 1, 9999);
+      Object.keys(stars).forEach((k) => { if (+k > maxLevel) maxLevel = +k; });
+
+      const d = {
+        version: 3,
+        level: maxLevel,
+        maxLevel: maxLevel,
+        mode: CONFIG.modes[raw.mode] ? raw.mode : 'find',
+        themeId: CONFIG.themes.some((t) => t.id === raw.themeId) ? raw.themeId : 'fruit',
+        muted: !!raw.muted,
+        voice: raw.voice !== false,
+        totalStars: 0,
+        starsByLevel: stars,
+        unlocked: []
+      };
+
+      const unlocked = Array.isArray(raw.unlocked)
+        ? raw.unlocked.filter((id) => CONFIG.themes.some((t) => t.id === id))
+        : [];
+      CONFIG.themes.forEach((t) => { if (maxLevel >= t.unlockLevel) unlocked.push(t.id); });
+      d.unlocked = Array.from(new Set(unlocked));
+      if (!d.unlocked.includes(d.themeId)) d.themeId = 'fruit';
+
+      let sum = 0;
+      Object.keys(stars).forEach((k) => { sum += stars[k]; });
+      d.totalStars = sum;
+      return d;
+    },
+
+    // 总星数永远由每关成绩汇总得出，重玩补星后会自然增加，不会重复计数
+    recalcStars() {
+      let sum = 0;
+      Object.keys(this.data.starsByLevel).forEach((k) => {
+        sum += clamp(parseInt(this.data.starsByLevel[k], 10) || 0, 0, 3);
+      });
+      this.data.totalStars = sum;
+      return sum;
+    },
+
+    /* ---------------- 写入 ---------------- */
+    // 所有操作后的统一入口：立即落盘，无需手动保存
+    markDirty() {
+      this.dirty = true;
+      return this.flush();
+    },
+
+    flush() {
+      if (!this.dirty) return false;
+
+      // 先合并别的标签页刚写进去的进度，避免互相覆盖
+      this.pullLatest();
+
+      this.recalcStars();
+      const env = {
+        app: 'tangguo-memory',
+        schema: 3,
+        savedAt: Date.now(),
+        data: this.data
+      };
+
+      let raw;
+      try { raw = JSON.stringify(env); } catch (e) { return false; }
+
+      const prev = this.readKey(CONFIG.saveKey);
+      try {
+        // 先把旧快照拷到备份，再覆盖主快照：中途失败至少还有一份完整数据
+        if (prev && prev !== raw) this.writeKey(CONFIG.saveBackupKey, prev);
+        this.writeKey(CONFIG.saveKey, raw);
+        this.afterWrite(env.savedAt);
+        return true;
+      } catch (e) {
+        // 配额不足 / 无痕模式：清掉损坏留证和备份后重试一次
+        try {
+          this.removeKey(CONFIG.saveCorruptKey);
+          this.removeKey(CONFIG.saveBackupKey);
+          this.writeKey(CONFIG.saveKey, raw);
+          this.afterWrite(env.savedAt);
+          return true;
+        } catch (e2) {
+          this.failed = true;
+          return false;
+        }
+      }
+    },
+
+    afterWrite(stamp) {
+      this.dirty = false;
+      this.failed = false;
+      this.lastSavedAt = stamp;
+      this.loadedAt = stamp;
+      this.source = 'primary';
+    },
+
+    // 别的标签页刚写过 → 把自己的内存合并进去（星星取大、进度取远）
+    pullLatest() {
+      const env = this.readEnvelope(CONFIG.saveKey, 'primary');
+      if (!env || env.savedAt <= this.loadedAt) return false;
+      this.mergeRaw(env.data, true);
+      this.loadedAt = env.savedAt;
+      return true;
+    },
+
+    // 合并：逐关取最高星、进度取最远、主题解锁取并集；设置可按需跟随
+    mergeRaw(other, takeSettings) {
+      if (!other || typeof other !== 'object') return false;
+      const incoming = this.normalize(other);
+      let changed = false;
+
+      Object.keys(incoming.starsByLevel).forEach((k) => {
+        if (incoming.starsByLevel[k] > (this.data.starsByLevel[k] || 0)) {
+          this.data.starsByLevel[k] = incoming.starsByLevel[k];
+          changed = true;
+        }
+      });
+
+      if (incoming.maxLevel > this.data.maxLevel) {
+        this.data.maxLevel = incoming.maxLevel;
+        this.data.level = incoming.maxLevel;
+        changed = true;
+      }
+
+      incoming.unlocked.forEach((id) => {
+        if (!this.data.unlocked.includes(id)) {
+          this.data.unlocked.push(id);
+          changed = true;
+        }
+      });
+
+      if (takeSettings) {
+        this.data.mode = incoming.mode;
+        this.data.themeId = this.data.unlocked.includes(incoming.themeId) ? incoming.themeId : this.data.themeId;
+        this.data.muted = incoming.muted;
+        this.data.voice = incoming.voice;
+      }
+
+      this.recalcStars();
+      return changed;
+    },
+
+    /* ---------------- 导入 / 导出 ---------------- */
+    exportPayload() {
+      this.flush();
+      return {
+        app: 'tangguo-memory',
+        game: '找到那颗糖 · 记忆乐园',
+        schema: 3,
+        exportedAt: new Date().toISOString(),
+        summary: {
+          maxLevel: this.data.maxLevel,
+          stars: this.data.totalStars,
+          cleared: Object.keys(this.data.starsByLevel).length
+        },
+        data: this.data
+      };
+    },
+
+    // 导入不覆盖本机进度，而是"合并"：两边取更好的，永远不倒退
+    importText(text) {
+      let obj;
+      try { obj = JSON.parse(text); } catch (e) { return { ok: false, reason: 'json' }; }
+
+      const data = (obj && obj.data && typeof obj.data === 'object') ? obj.data : obj;
+      if (!data || typeof data !== 'object') return { ok: false, reason: 'shape' };
+      if (!data.starsByLevel && data.maxLevel == null && data.totalStars == null) {
+        return { ok: false, reason: 'shape' };
+      }
+
+      const beforeStars = this.data.totalStars;
+      const beforeLevels = Object.keys(this.data.starsByLevel).length;
+      this.mergeRaw(data, true);
+      this.markDirty();
+
+      return {
+        ok: true,
+        levels: Object.keys(this.data.starsByLevel).length - beforeLevels,
+        stars: this.data.totalStars - beforeStars,
+        totalStars: this.data.totalStars,
+        maxLevel: this.data.maxLevel
+      };
+    },
+
+    clear() {
+      this.removeKey(CONFIG.saveKey);
+      this.removeKey(CONFIG.saveBackupKey);
+      this.removeKey(CONFIG.saveCorruptKey);
+      this.removeKey(CONFIG.legacySaveKey);
+      this.data = this.normalize(null);
+      this.loadedAt = 0;
+      this.lastSavedAt = 0;
+      this.dirty = true;
+      this.flush();
+    },
+
+    info() {
+      const raw = this.readKey(CONFIG.saveKey) || '';
+      let bytes = 0;
+      try { bytes = raw ? new Blob([raw]).size : 0; } catch (e) { bytes = raw.length; }
+      return {
+        bytes: bytes,
+        savedAt: this.lastSavedAt,
+        failed: this.failed,
+        source: this.source
+      };
     }
-    return { cw, ch, positions: arr };
+  };
+
+  /* ==========================================================
+   * 3.5 关卡元信息（章节 / 名称 / 星星成绩）
+   * ========================================================== */
+  function chapterOf(level) {
+    return Math.floor((level - 1) / CONFIG.levelsPerChapter) + 1;
   }
 
-  function gridFormation(count, cols, stageW, stageH) {
-    const gapRatio = 0.14;
-    const marginX = Math.max(10, stageW * 0.04);
-    const marginY = 14;
-    const availW = stageW - marginX * 2;
-    const availH = stageH - marginY * 2;
+  // 关卡名称：按关卡号固定，循环使用章节名池
+  function levelName(level) {
+    const pool = CONFIG.levelNames[(chapterOf(level) - 1) % CONFIG.levelNames.length];
+    return pool[(level - 1) % CONFIG.levelsPerChapter];
+  }
 
-    const rows = Math.ceil(count / cols);
-    const byW = availW / (cols + gapRatio * (cols - 1));
-    const byH = availH / (1.42 * rows + gapRatio * (rows - 1));
+  function starsOf(level) {
+    return clamp(parseInt(Save.data.starsByLevel[level], 10) || 0, 0, 3);
+  }
 
-    const cw = Math.max(34, Math.floor(Math.min(byW, byH)));
-    const ch = Math.round(cw * 1.42);
-    const gap = cw * gapRatio;
+  // 已通关关卡数（有成绩即视为通关）
+  function clearedCount() {
+    return Object.keys(Save.data.starsByLevel).length;
+  }
 
-    const totalH = rows * ch + (rows - 1) * gap;
-    const positions = [];
+  function chapterStarSum(chapter) {
+    const start = (chapter - 1) * CONFIG.levelsPerChapter + 1;
+    let sum = 0;
+    for (let i = 0; i < CONFIG.levelsPerChapter; i++) sum += starsOf(start + i);
+    return sum;
+  }
 
-    for (let r = 0; r < rows; r++) {
-      const inRow = Math.min(cols, count - r * cols);
-      const rowW = inRow * cw + (inRow - 1) * gap;
-      for (let c = 0; c < inRow; c++) {
-        positions.push({
-          x: -rowW / 2 + c * (cw + gap) + cw / 2,
-          y: -totalH / 2 + r * (ch + gap) + ch / 2,
-          rot: 0
+  /* ==========================================================
+   * 4. 音效引擎（Web Audio 纯合成，无外部文件）
+   * ========================================================== */
+  const Sound = {
+    ac: null,
+    master: null,
+    muted: false,
+    noiseBuf: null,
+
+    ensure() {
+      if (this.ac) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try {
+        this.ac = new AC();
+        this.master = this.ac.createGain();
+        this.master.gain.value = this.muted ? 0 : CONFIG.audio.volume;
+        this.master.connect(this.ac.destination);
+      } catch (e) { /* 不支持音频 */ }
+    },
+
+    resume() {
+      this.ensure();
+      if (this.ac && this.ac.state === 'suspended') this.ac.resume();
+    },
+
+    setMuted(m) {
+      this.muted = m;
+      if (this.master && this.ac) {
+        this.master.gain.setTargetAtTime(
+          m ? 0 : CONFIG.audio.volume,
+          this.ac.currentTime,
+          0.02
+        );
+      }
+    },
+
+    /* 单音：可滑音、可延迟 */
+    tone(freq, dur, opt) {
+      if (!this.ac || this.muted) return;
+      opt = opt || {};
+      const t0 = this.ac.currentTime + (opt.delay || 0);
+      const osc = this.ac.createOscillator();
+      const g = this.ac.createGain();
+      osc.type = opt.type || 'sine';
+      osc.frequency.setValueAtTime(freq, t0);
+      if (opt.slide) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(30, opt.slide), t0 + dur);
+      }
+      const peak = opt.gain == null ? 0.16 : opt.gain;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + (opt.attack || 0.012));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g);
+      g.connect(this.master);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.04);
+    },
+
+    /* 点击：短促的"啵" */
+    pop() {
+      this.tone(760, 0.085, { type: 'triangle', gain: 0.18, slide: 430 });
+    },
+
+    /* 选对：欢快上行和弦 */
+    correct() {
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((f, i) => {
+        this.tone(f, 0.3, { type: 'triangle', gain: 0.13, delay: i * 0.065 });
+        this.tone(f * 2, 0.22, { type: 'sine', gain: 0.045, delay: i * 0.065 });
+      });
+    },
+
+    /* 选错：柔和双低音，不刺耳 */
+    wrong() {
+      this.tone(320, 0.16, { type: 'sine', gain: 0.14, slide: 268 });
+      this.tone(240, 0.24, { type: 'sine', gain: 0.12, slide: 205, delay: 0.13 });
+    },
+
+    /* 掉一颗心 */
+    sad() {
+      this.tone(392, 0.2, { type: 'sine', gain: 0.1, slide: 300, delay: 0.05 });
+    },
+
+    /* 洗牌：带通噪声 whoosh */
+    whoosh() {
+      if (!this.ac || this.muted) return;
+      this.ensureNoise();
+      const t0 = this.ac.currentTime;
+      const src = this.ac.createBufferSource();
+      src.buffer = this.noiseBuf;
+      const bp = this.ac.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.Q.value = 1.1;
+      bp.frequency.setValueAtTime(520, t0);
+      bp.frequency.exponentialRampToValueAtTime(2400, t0 + 0.16);
+      bp.frequency.exponentialRampToValueAtTime(760, t0 + 0.4);
+      const g = this.ac.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.1, t0 + 0.07);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.42);
+      src.connect(bp); bp.connect(g); g.connect(this.master);
+      src.start(t0);
+      src.stop(t0 + 0.46);
+    },
+
+    /* 过关小旋律 */
+    win() {
+      const melody = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+      melody.forEach((f, i) => {
+        this.tone(f, 0.36, { type: 'triangle', gain: 0.12, delay: i * 0.11 });
+      });
+      this.tone(261.63, 0.7, { type: 'sine', gain: 0.06, delay: 0.1 });
+      this.tone(392, 0.7, { type: 'sine', gain: 0.05, delay: 0.1 });
+    },
+
+    /* 解锁提示音 */
+    chime() {
+      [880, 1174.66, 1567.98].forEach((f, i) => {
+        this.tone(f, 0.3, { type: 'sine', gain: 0.1, delay: i * 0.08 });
+      });
+    },
+
+    ensureNoise() {
+      if (this.noiseBuf || !this.ac) return;
+      const len = Math.floor(this.ac.sampleRate * 0.5);
+      const buf = this.ac.createBuffer(1, len, this.ac.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      this.noiseBuf = buf;
+    }
+  };
+
+  /* ==========================================================
+   * 5. 粒子系统（全屏星星 / 彩带）
+   * ========================================================== */
+  const FX = {
+    cv: null, ctx: null, parts: [], raf: 0, w: 0, h: 0, last: 0,
+    EMOJI: ['⭐', '✨', '🌟', '💫', '🎉'],
+    COLORS: ['#FF8FA3', '#FFC46B', '#7FD6B0', '#8FBEFF', '#C6A8FF', '#FFE066'],
+
+    init() {
+      this.cv = $('fx');
+      this.ctx = this.cv.getContext('2d');
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+    },
+
+    resize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      this.w = window.innerWidth;
+      this.h = window.innerHeight;
+      this.cv.width = Math.floor(this.w * dpr);
+      this.cv.height = Math.floor(this.h * dpr);
+      this.cv.style.width = this.w + 'px';
+      this.cv.style.height = this.h + 'px';
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    },
+
+    /* 从某点爆开（答对时） */
+    burst(x, y, n, emojis) {
+      n = n || 22;
+      emojis = emojis || this.EMOJI;
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 110 + Math.random() * 270;
+        this.parts.push({
+          x: x, y: y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp - 90,
+          g: 620, drag: 0.995,
+          rot: Math.random() * 6.28,
+          vr: (Math.random() - 0.5) * 12,
+          size: 12 + Math.random() * 14,
+          life: 1, ttl: 0.85 + Math.random() * 0.55,
+          kind: 'emoji', text: pick(emojis)
         });
       }
+      this.start();
+    },
+
+    /* 全屏下落（过关时） */
+    rain(n) {
+      n = n || 70;
+      for (let i = 0; i < n; i++) {
+        const ribbon = Math.random() < 0.55;
+        this.parts.push({
+          x: Math.random() * this.w,
+          y: -30 - Math.random() * 220,
+          vx: (Math.random() - 0.5) * 70,
+          vy: 90 + Math.random() * 150,
+          g: 260, drag: 0.999,
+          rot: Math.random() * 6.28,
+          vr: (Math.random() - 0.5) * 9,
+          size: ribbon ? 8 + Math.random() * 8 : 14 + Math.random() * 14,
+          h: ribbon ? 6 + Math.random() * 6 : 0,
+          color: pick(this.COLORS),
+          life: 1, ttl: 3.2 + Math.random() * 1.8,
+          kind: ribbon ? 'ribbon' : 'emoji',
+          text: pick(this.EMOJI),
+          sway: Math.random() * 6.28
+        });
+      }
+      this.start();
+    },
+
+    start() {
+      if (this.raf) return;
+      this.last = performance.now();
+      this.raf = requestAnimationFrame((t) => this.tick(t));
+    },
+
+    tick(now) {
+      const dt = Math.min(0.05, (now - this.last) / 1000);
+      this.last = now;
+      const ctx = this.ctx;
+      ctx.clearRect(0, 0, this.w, this.h);
+
+      for (let i = this.parts.length - 1; i >= 0; i--) {
+        const p = this.parts[i];
+        p.life -= dt / p.ttl;
+        if (p.life <= 0) { this.parts.splice(i, 1); continue; }
+
+        p.vy += p.g * dt;
+        p.vx *= p.drag;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vr * dt;
+        if (p.kind === 'emoji') p.sway = (p.sway || 0) + dt * 2;
+
+        if (p.y > this.h + 80) { this.parts.splice(i, 1); continue; }
+
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, p.life * 1.6);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        if (p.kind === 'emoji') {
+          ctx.font = p.size + 'px "Apple Color Emoji","Segoe UI Emoji",serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.text, 0, 0);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.h / 2, p.size, p.h);
+        }
+        ctx.restore();
+      }
+
+      if (this.parts.length) {
+        this.raf = requestAnimationFrame((t) => this.tick(t));
+      } else {
+        this.raf = 0;
+        ctx.clearRect(0, 0, this.w, this.h);
+      }
     }
-    return { cw, ch, positions };
+  };
+
+  /* ==========================================================
+   * 6. 运行时状态
+   * ========================================================== */
+  const S = {
+    screen: 'home',
+    mode: 'find',
+    themeId: 'fruit',
+    level: 1,
+    hearts: 3,
+    cards: [],
+    target: null,
+    pairItems: [],
+    pairsDone: 0,
+    totalPairs: 0,
+    firstCard: null,
+    busy: true,
+    isReplay: false,   // 本次是否为"重玩旧关卡"（补星）
+    chapView: 1,       // 关卡列表当前查看的章节
+    hintCharges: 0,
+    mercy: 0,
+    runToken: 0,
+    uid: 0,
+    hintTimer: 0,
+    toastTimer: 0,
+    resetArmed: false
+  };
+
+  /* 常用 DOM */
+  let boardEl, statusEl, heartsEl, hudLevelEl, hudThemeEl,
+      targetChip, progressChip, muteBtn;
+
+  const currentTheme = () => CONFIG.themes.find((t) => t.id === S.themeId) || CONFIG.themes[0];
+
+  function applyTheme(theme) {
+    const r = document.documentElement.style;
+    const c = theme.colors;
+    r.setProperty('--accent', c.accent);
+    r.setProperty('--accent2', c.accent2);
+    r.setProperty('--accent-deep', c.deep);
+    r.setProperty('--accent-soft', c.soft);
+    r.setProperty('--bg1', c.bg1);
+    r.setProperty('--bg2', c.bg2);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', c.bg1);
   }
 
-  function buildFormation(n, cols, stageW, stageH) {
-    if (n === 5) {
-      const cw = Math.round(stageW * 0.215);
-      return pentagon(n, cw, Math.round(cw * 1.42), stageW, stageH);
-    }
-    return gridFormation(n, cols, stageW, stageH);
-  }
+  /* ==========================================================
+   * 7. 渲染层
+   * ========================================================== */
 
-  function place(idx, slot) {
-    if (!layoutCfg) return;
-    const { cx, cy, cw, ch, formation } = layoutCfg;
-    const pos = formation[Math.max(0, Math.min(slot, formation.length - 1))];
-    if (!pos) return;
-
-    const el = cards[idx].el;
-    el.style.setProperty('--x', (cx + pos.x - cw / 2).toFixed(1) + 'px');
-    el.style.setProperty('--y', (cy + pos.y - ch / 2).toFixed(1) + 'px');
-    el.style.setProperty('--rot', (pos.rot || 0).toFixed(2) + 'deg');
-    el.style.setProperty('--sc', '1');
-  }
-
-  function layout() {
-    if (!cards.length) return;
-
-    const stageW = stage.clientWidth || DESIGN_W;
-    const stageH = stage.clientHeight || 900;
-    const cfg = LEVELS[levelIdx];
-    const built = buildFormation(count, cfg.cols, stageW, stageH);
-
-    layoutCfg = {
-      cx: stageW / 2,
-      cy: stageH / 2,
-      cw: built.cw,
-      ch: built.ch,
-      formation: built.positions
+  /* ---------- 7.1 难度计算（纯函数：关卡号 + 牌数 → 参数） ----------
+     记忆/偷看时间与牌数正相关：牌越多给的时间越长，避免"牌多还看得快"。 */
+  function difficulty(level, count) {
+    const L = CONFIG.level;
+    const tier = L.cardTiers.find((t) => level <= t.upTo) || L.cardTiers[L.cardTiers.length - 1];
+    const n = count || tier.cards;
+    const memorize = clamp(
+      L.memorize.base + (n - 4) * L.memorize.perCard - (level - 1) * L.memorize.step,
+      L.memorize.min, L.memorize.max
+    );
+    const peek = clamp(
+      L.peek.base + (n - 4) * L.peek.perCard - (level - 1) * L.peek.step,
+      L.peek.min, L.peek.max
+    );
+    const speed = Math.min(L.shuffle.maxSpeed, 1 + (level - 1) * L.shuffle.speedStep);
+    const shuffleDur = Math.max(L.shuffle.minMs, Math.round(L.shuffle.baseMs / speed));
+    const passCfg = L.shuffle.passes.find((p) => level <= p.upTo) || L.shuffle.passes[L.shuffle.passes.length - 1];
+    return {
+      cards: tier.cards,
+      memorize: Math.round(memorize),
+      peek: Math.round(peek),
+      shuffleDur: shuffleDur,
+      passes: passCfg.passes,
+      speed: speed
     };
-
-    stage.style.setProperty('--cw', built.cw + 'px');
-    stage.style.setProperty('--ch', built.ch + 'px');
-
-    for (let i = 0; i < count; i++) place(i, slotOf[i]);
   }
 
-  /* ---------- 翻牌 ---------- */
-  function allIdx() {
-    const arr = [];
-    for (let i = 0; i < count; i++) arr.push(i);
-    return arr;
+  /* ---------- 7.2 首页 ---------- */
+  function renderHome() {
+    const modeRow = $('modeRow');
+    modeRow.innerHTML = Object.keys(CONFIG.modes).map((key) => {
+      const m = CONFIG.modes[key];
+      return '<button type="button" class="mode-card' + (S.mode === key ? ' on' : '') + '" data-mode="' + key + '">' +
+        '<span class="mode-icon">' + m.icon + '</span>' +
+        '<span class="mode-name">' + m.name + '</span>' +
+        '<span class="mode-desc">' + m.desc + '</span>' +
+        '</button>';
+    }).join('');
+
+    const themeRow = $('themeRow');
+    themeRow.innerHTML = CONFIG.themes.map((t) => {
+      const locked = !Save.data.unlocked.includes(t.id);
+      const on = S.themeId === t.id && !locked;
+      return '<button type="button" class="theme-chip' + (on ? ' on' : '') + (locked ? ' locked' : '') + '"' +
+        ' data-theme="' + t.id + '"' + (locked ? ' aria-disabled="true"' : '') + '>' +
+        '<span class="theme-icon">' + (locked ? '🔒' : t.icon) + '</span>' +
+        '<span class="theme-text"><b>' + t.name + '</b>' +
+        '<small>' + (locked ? ('第 ' + t.unlockLevel + ' 关解锁') : (t.items.length + ' 张卡片')) + '</small>' +
+        '</span></button>';
+    }).join('');
+
+    $('startBtn').innerHTML = '开始第 <b>' + S.level + '</b> 关 <span class="arrow">▶</span>';
+
+    const themeCount = CONFIG.themes.filter((t) => Save.data.unlocked.includes(t.id)).length;
+    $('levelsBtnSub').textContent = '已通关 ' + clearedCount() + ' 关';
+    $('homeStats').textContent = '⭐ 已收集 ' + Save.data.totalStars + ' 颗星 · 已解锁 ' +
+      themeCount + '/' + CONFIG.themes.length + ' 个主题';
+
+    $('progressText').textContent = '第 ' + Save.data.maxLevel + ' 关 · ⭐ ' + Save.data.totalStars;
   }
 
-  function flipCards(list, toBack, stagger) {
-    stagger = stagger === undefined ? 70 : stagger;
-    return new Promise((resolve) => {
-      list.forEach((idx, k) => {
-        setTimeout(() => cards[idx].el.classList.toggle('is-back', toBack), k * stagger);
-      });
-      setTimeout(resolve, Math.max(0, list.length - 1) * stagger + 800);
-    });
-  }
+  /* ---------- 7.2b 关卡列表 ---------- */
+  function renderLevels() {
+    const maxLv = Save.data.maxLevel;
+    const maxChap = chapterOf(maxLv);
+    const c = clamp(S.chapView || 1, 1, maxChap);
+    S.chapView = c;
 
-  /* ---------- 洗牌 ---------- */
-  async function swapCards(a, b) {
-    if (a === b || slotOf[a] === slotOf[b]) return;
-    const A = cards[a].el;
-    const B = cards[b].el;
-    const sa = slotOf[a];
-    const sb = slotOf[b];
-    const dir = sa < sb ? 1 : -1;
+    const start = (c - 1) * CONFIG.levelsPerChapter + 1;
+    const end = start + CONFIG.levelsPerChapter - 1;
+    const cardA = difficulty(start).cards;
+    const cardB = difficulty(end).cards;
 
-    A.style.zIndex = '30';
-    B.style.zIndex = '24';
+    $('chapTitle').textContent = '第 ' + c + ' 章' + (chapterStarSum(c) >= CONFIG.levelsPerChapter * 3 ? ' 🏆' : '');
+    $('chapSub').textContent = '第 ' + start + '-' + end + ' 关 · ' +
+      (cardA === cardB ? cardA + ' 张牌' : cardA + '-' + cardB + ' 张牌');
+    $('chapPrev').disabled = c <= 1;
+    $('chapNext').disabled = c >= maxChap;
 
-    const ch = layoutCfg ? layoutCfg.ch : 220;
-    placeWithLift(a, sa, -Math.round(ch * (0.18 + Math.random() * 0.06)), dir * (6 + Math.random() * 3), 1.045);
-    placeWithLift(b, sb, Math.round(ch * (0.12 + Math.random() * 0.05)), -dir * (4 + Math.random() * 3), 1.02);
+    let html = '';
+    for (let lv = start; lv <= end; lv++) {
+      const stars = starsOf(lv);
+      const cleared = stars > 0;
+      const locked = lv > maxLv;
+      const current = lv === maxLv && !cleared;
 
-    await wait(200 / speed);
+      let flag = '可挑战';
+      if (locked) flag = '🔒 未解锁';
+      else if (cleared) flag = stars >= 3 ? '✓ 满星' : ('可补 ' + (3 - stars) + ' 颗');
+      else if (current) flag = '当前关';
 
-    slotOf[a] = sb;
-    slotOf[b] = sa;
-    place(a, sb);
-    place(b, sa);
+      let starHTML = '';
+      for (let i = 0; i < 3; i++) {
+        starHTML += '<i class="' + (i < stars ? 'on' : '') + '">★</i>';
+      }
 
-    await wait(430 / speed);
-
-    A.style.zIndex = '';
-    B.style.zIndex = '';
-  }
-
-  function placeWithLift(idx, slot, yOff, extraRot, scale) {
-    if (!layoutCfg) return;
-    const { cx, cy, cw, ch, formation } = layoutCfg;
-    const pos = formation[Math.max(0, Math.min(slot, formation.length - 1))];
-    if (!pos) return;
-    const el = cards[idx].el;
-    el.style.setProperty('--x', (cx + pos.x - cw / 2).toFixed(1) + 'px');
-    el.style.setProperty('--y', (cy + pos.y - ch / 2 + yOff).toFixed(1) + 'px');
-    el.style.setProperty('--rot', ((pos.rot || 0) + extraRot).toFixed(2) + 'deg');
-    el.style.setProperty('--sc', String(scale));
-  }
-
-  async function doShuffle() {
-    if (count < 2) return;
-    const total = count <= 7 ? 6 : (count <= 11 ? 7 : 8);
-
-    for (let k = 0; k < total; k++) {
-      let a = randInt(count);
-      let b = randInt(count);
-      let guard = 0;
-      while (a === b && guard++ < 30) b = randInt(count);
-      if (a === b) continue;
-      await swapCards(a, b);
+      html += '<button type="button" class="lv-card' +
+        (cleared ? ' cleared' : '') + (cleared && stars < 3 ? ' gap' : '') +
+        (current ? ' current' : '') + (locked ? ' locked' : '') +
+        '" data-level="' + lv + '"' + (locked ? ' disabled' : '') + '>' +
+        '<span class="lv-top"><span class="lv-no">' + (lv < 10 ? '0' + lv : lv) + '</span>' +
+        '<span class="lv-flag">' + flag + '</span></span>' +
+        '<span class="lv-name">' + levelName(lv) + '</span>' +
+        '<span class="lv-stars">' + starHTML + '</span>' +
+        '</button>';
     }
-  }
+    $('levelGrid').innerHTML = html;
 
-  /* ---------- HUD ---------- */
-  function updateHUD() {
-    levelTag.textContent = '第 ' + (levelIdx + 1) + ' 关';
-    livesTag.textContent = '机会 ' + attemptsLeft + ' / ' + LEVELS[levelIdx].attempts;
-    livesTag.classList.toggle('low', attemptsLeft <= 1);
-  }
-
-  function setHint(text) {
-    hint.classList.remove('pop');
-    void hint.offsetWidth;
-    hint.textContent = text;
-    hint.classList.add('pop');
-  }
-
-  /* ---------- 粒子 ---------- */
-  function burst(x, y) {
-    const colors = ['#f6ca6c', '#eaa96c', '#a8cf7f', '#f6e3a3', '#cfe4a5', '#f3bccd'];
-    for (let i = 0; i < 26; i++) {
-      const p = document.createElement('i');
-      p.className = 'spark';
-      p.style.left = x + 'px';
-      p.style.top = y + 'px';
-      p.style.background = colors[i % colors.length];
-      const ang = Math.random() * Math.PI * 2;
-      const dist = 60 + Math.random() * 170;
-      p.style.setProperty('--tx', (Math.cos(ang) * dist).toFixed(0) + 'px');
-      p.style.setProperty('--ty', (Math.sin(ang) * dist - 50).toFixed(0) + 'px');
-      p.style.width = p.style.height = (7 + Math.random() * 6).toFixed(0) + 'px';
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 1200);
-    }
-  }
-
-  /* ---------- 弹窗 ---------- */
-  function showModal(opts) {
-    modalTitle.textContent = opts.title;
-    modalText.textContent = opts.text;
-    modalPrimary.textContent = opts.primary;
-    modalSecondary.textContent = opts.secondary;
-    modalActions.primary = opts.onPrimary;
-    modalActions.secondary = opts.onSecondary;
-    modalActions.keepModal = !!opts.keepModal;
-    modalSecondary.style.display = opts.secondary ? '' : 'none';
-    overlay.classList.add('show');
-  }
-
-  function hideModal() {
-    overlay.classList.remove('show');
-  }
-
-  modalPrimary.addEventListener('click', () => {
-    const fn = modalActions.primary;
-    hideModal();
-    if (fn) fn();
-  });
-
-  modalSecondary.addEventListener('click', () => {
-    const fn = modalActions.secondary;
-    if (!modalActions.keepModal) hideModal();
-    if (fn) fn();
-  });
-
-  /* ---------- 选关 ---------- */
-  function buildLevelGrid() {
-    levelGrid.innerHTML = '';
-    LEVELS.forEach((cfg, i) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'level-item';
-      b.innerHTML = '<span class="lv-name">第 ' + (i + 1) + ' 关</span>' +
-                    '<span class="lv-meta">' + cfg.count + ' 张 · ' + cfg.attempts + ' 次机会 · 速度 ×' + cfg.speed + '</span>';
-      b.addEventListener('click', () => {
-        closeLevels();
-        startLevel(i);
-      });
-      levelGrid.appendChild(b);
-    });
+    const got = chapterStarSum(c);
+    $('levelsStat').textContent = '本章 ⭐ ' + got + ' / ' + (CONFIG.levelsPerChapter * 3);
   }
 
   function openLevels() {
-    levelSelect.classList.add('show');
+    // 从游戏中打开 → 定位到当前正在玩的章节；从首页打开 → 定位到最新章节
+    const base = S.screen === 'game' ? S.level : Save.data.maxLevel;
+    S.chapView = chapterOf(base);
+    renderLevels();
+    $('levelsOverlay').classList.add('show');
   }
 
   function closeLevels() {
-    levelSelect.classList.remove('show');
+    $('levelsOverlay').classList.remove('show');
   }
 
-  levelBtn.addEventListener('click', openLevels);
-  levelClose.addEventListener('click', closeLevels);
+  // 从列表进入某一关：已完成/旧关卡 = 补星重玩
+  function startFromList(level) {
+    if (level > Save.data.maxLevel) return;
+    closeLevels();
+    S.isReplay = level < Save.data.maxLevel || starsOf(level) > 0;
+    S.level = level;
+    S.mercy = 0;
+    applyTheme(currentTheme());
+    switchScreen('game');
+    startLevel();
+  }
 
-  levelSelect.addEventListener('click', (e) => {
-    if (e.target === levelSelect) closeLevels();
-  });
+  /* ---------- 7.3 HUD ---------- */
+  function renderHUD() {
+    const theme = currentTheme();
+    hudLevelEl.textContent = '第 ' + S.level + ' 关';
+    hudThemeEl.textContent = theme.name + ' · ' + (S.mode === 'find' ? '找糖果' : '翻牌配对');
 
-  /* ---------- 开始某一关 ---------- */
-  async function startLevel(i) {
-    const my = ++runId;
+    if (S.mode === 'find') {
+      targetChip.classList.remove('hidden');
+      progressChip.classList.add('hidden');
+      targetChip.innerHTML = '<span class="chip-label">找到</span>' +
+        '<span class="chip-main">' + label(S.target) + '</span>';
+    } else {
+      targetChip.classList.add('hidden');
+      progressChip.classList.remove('hidden');
+      updateProgress();
+    }
 
-    levelIdx = i;
-    const cfg = LEVELS[i];
-    count = cfg.count;
-    attemptsLeft = cfg.attempts;
-    speed = cfg.speed;
+    muteBtn.textContent = Save.data.muted ? '🔇' : '🔊';
+    muteBtn.classList.toggle('is-off', Save.data.muted);
+  }
 
-    hideModal();
-    phase = 'prepare';
-    stage.classList.remove('pickable');
-    shuffleBtn.disabled = true;
+  function updateProgress() {
+    progressChip.innerHTML = '<span class="chip-label">已配对</span>' +
+      '<span class="chip-main">' + S.pairsDone + ' / ' + S.totalPairs + '</span>';
+  }
 
-    // 随机挑一种糖果当目标
-    const p = PATTERNS[randInt(PATTERNS.length)];
-    targetName = p.name;
-    targetBody = p.body;
-    targetIdx = randInt(count);
+  function renderHearts() {
+    let html = '';
+    for (let i = 0; i < CONFIG.lives.max; i++) {
+      const on = i < S.hearts;
+      html += '<span class="heart' + (on ? '' : ' off') + '">❤️</span>';
+    }
+    heartsEl.innerHTML = html;
+  }
 
-    slotOf = [];
-    for (let k = 0; k < count; k++) slotOf.push(k);
+  function updateHearts(delta) {
+    S.hearts = clamp(S.hearts + delta, 0, CONFIG.lives.max);
+    renderHearts();
+    const idx = delta < 0 ? S.hearts : S.hearts - 1; // 失去的那颗 / 补回的那颗
+    const node = heartsEl.children[idx];
+    if (node) {
+      node.classList.add(delta < 0 ? 'break' : 'gain');
+      setTimeout(() => node.classList.remove('break', 'gain'), 520);
+    }
+    if (delta < 0) Sound.sad();
+  }
 
-    buildCards(count);
-    layout();
-    updateHUD();
+  // 统一 busy 状态：同时把暂停按钮置灰（洗牌/记忆阶段不可暂停）
+  function setBusy(v) {
+    S.busy = v;
+    const btn = $('pauseBtn');
+    if (btn) btn.classList.toggle('is-off', v);
+  }
 
-    stage.style.setProperty('--speed', String(speed));
+  function setStatus(text) {
+    statusEl.textContent = text;
+    statusEl.classList.remove('flash');
+    void statusEl.offsetWidth;
+    statusEl.classList.add('flash');
+  }
 
-    requestAnimationFrame(() => {
-      cards.forEach((c) => { c.el.style.transition = ''; });
+  /* ---------- 7.4 发牌 ---------- */
+  function makeCard(item, pairId, isTarget) {
+    return {
+      uid: 'u' + (++S.uid),
+      item: item,
+      pairId: pairId || null,
+      isTarget: !!isTarget,
+      flipped: false,
+      matched: false,
+      el: null
+    };
+  }
+
+  function dealCards() {
+    const diff = difficulty(S.level);
+    const theme = currentTheme();
+    let count = Math.max(4, diff.cards - S.mercy);
+
+    if (S.mode === 'pair') {
+      count = Math.max(4, Math.floor(count / 2) * 2);
+      count = Math.min(count, theme.items.length * 2);
+      const pairCount = Math.floor(count / 2);
+      const picks = shuffle(theme.items).slice(0, pairCount);
+      S.totalPairs = picks.length;
+      S.pairsDone = 0;
+      S.target = null;
+      S.pairItems = picks;
+      const deck = [];
+      picks.forEach((item, i) => {
+        const pid = 'p' + i;
+        deck.push(makeCard(item, pid, false));
+        deck.push(makeCard(item, pid, false));
+      });
+      return shuffle(deck);
+    }
+
+    count = Math.min(count, theme.items.length);
+    const pool = shuffle(theme.items);
+    const target = pool[0];
+    const picks = [target].concat(pool.slice(1, count));
+    S.target = target;
+    S.totalPairs = 0;
+    S.pairsDone = 0;
+    S.pairItems = [];
+    return shuffle(picks.map((item) => makeCard(item, null, item === target)));
+  }
+
+  function faceHTML(item) {
+    if (item.kind === 'num') {
+      return '<span class="glyph num" style="color:' + item.color + '">' + item.g + '</span>';
+    }
+    return '<span class="glyph">' + item.g + '</span>';
+  }
+
+  function renderBoard(cards) {
+    S.cards = cards;
+    const n = cards.length;
+    // 12 张时用 3 列（4 行），竖屏里牌更大、更好点
+    const cols = n <= 4 ? 2 : (n <= 6 ? 3 : (n >= 12 ? 3 : 4));
+    const gap = n <= 6 ? 12 : 10;
+
+    boardEl.style.setProperty('--cols', cols);
+    boardEl.style.setProperty('--gap', gap + 'px');
+    boardEl.style.setProperty('--glyph',
+      cols === 2 ? 'min(15vw, 64px)' : (cols === 3 ? 'min(10.5vw, 48px)' : 'min(8.2vw, 40px)'));
+
+    boardEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    cards.forEach((c, i) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'card';
+      el.dataset.uid = c.uid;
+      el.setAttribute('aria-label', '第 ' + (i + 1) + ' 张卡片');
+      el.style.animationDelay = (i * 26) + 'ms';
+      el.innerHTML =
+        '<div class="card-inner">' +
+          '<div class="face back"><span class="back-mark">?</span></div>' +
+          '<div class="face front">' + faceHTML(c.item) + '</div>' +
+        '</div>';
+      c.el = el;
+      frag.appendChild(el);
     });
 
-    phase = 'preview';
-    const showMs = Math.max(1300, 2400 - i * 110);
-    setHint('记住这颗「' + targetName + '」在哪张牌上');
-
-    await wait(showMs);
-    if (my !== runId) return;
-
-    phase = 'turn';
-    setHint('翻到背面，牌面看起来全都一样…');
-    await flipCards(allIdx(), true, 40);
-    if (my !== runId) return;
-
-    await wait(240);
-    if (my !== runId) return;
-
-    phase = 'shuffle';
-    setHint('牌在打乱，眼睛别眨');
-    await doShuffle();
-    if (my !== runId) return;
-
-    beginPick();
+    boardEl.appendChild(frag);
   }
 
-  function beginPick() {
-    phase = 'pick';
-    stage.classList.add('pickable');
-    shuffleBtn.disabled = false;
-    setHint('糖果藏在哪张牌后面？还能点 ' + attemptsLeft + ' 次');
+  /* ---------- 7.5 屏幕切换 ---------- */
+  function switchScreen(name) {
+    $('screen-home').classList.toggle('active', name === 'home');
+    $('screen-game').classList.toggle('active', name === 'game');
+    S.screen = name;
   }
 
-  /* ---------- 点击 ---------- */
-  async function pickCard(idx) {
-    if (phase !== 'pick') return;
-    const my = runId;
+  /* ==========================================================
+   * 8. 流程层
+   * ========================================================== */
 
-    phase = 'reveal';
-    stage.classList.remove('pickable');
-    shuffleBtn.disabled = true;
+  /* ---------- 8.1 计时条 ---------- */
+  function waitWithBar(ms, token) {
+    return new Promise((resolve) => {
+      const timer = $('timer');
+      const fill = $('timerFill');
+      const num = $('countdown');
 
-    const el = cards[idx].el;
-    const hit = idx === targetIdx;
+      timer.classList.add('show');
+      num.textContent = Math.ceil(ms / 1000);
+      fill.style.transition = 'none';
+      fill.style.width = '100%';
+      void fill.offsetWidth;
+      fill.style.transition = 'width ' + ms + 'ms linear';
+      fill.style.width = '0%';
 
-    el.classList.add('chosen');
-    el.classList.remove('is-back');
-    await wait(700);
-    if (my !== runId) return;
+      const start = performance.now();
+      let raf = 0;
 
-    if (hit) {
-      const r = el.getBoundingClientRect();
-      burst(r.left + r.width / 2, r.top + r.height / 2);
-      setHint('找到啦！就是这颗「' + targetName + '」');
-      await wait(1400);
-      if (my !== runId) return;
-      nextLevel();
-      return;
+      function done() {
+        if (raf) cancelAnimationFrame(raf);
+        timer.classList.remove('show');
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+      }
+
+      function step(now) {
+        if (token !== S.runToken) { done(); resolve(); return; }
+        const left = ms - (now - start);
+        num.textContent = Math.max(1, Math.ceil(left / 1000));
+        if (left <= 0) { done(); resolve(); return; }
+        raf = requestAnimationFrame(step);
+      }
+      raf = requestAnimationFrame(step);
+    });
+  }
+
+  /* ---------- 8.2 开始一关 ---------- */
+  async function startLevel() {
+    const token = ++S.runToken;
+
+    S.hearts = CONFIG.lives.max;
+    S.hintCharges = 0;
+    S.firstCard = null;
+    setBusy(true);
+    S.pairsDone = 0;
+
+    // 只有"打到最前面"才推进进度；重玩旧关卡不会把进度倒回去
+    if (S.level > Save.data.maxLevel) {
+      Save.data.maxLevel = S.level;
+      Save.data.level = S.level;
     }
+    Save.markDirty();
 
-    // 点错了
-    attemptsLeft--;
-    updateHUD();
-    el.classList.remove('chosen');
-    setHint('这里没有糖果，再找找');
-    await wait(520);
-    if (my !== runId) return;
+    hideOverlays();
 
-    if (attemptsLeft <= 0) {
-      phase = 'failed';
-      setHint('机会用完了…');
-      await flipCards(allIdx(), false, 50);
-      if (my !== runId) return;
-      cards[targetIdx].el.querySelector('.face.front').classList.add('is-target');
-      await wait(500);
-      if (my !== runId) return;
-      showModal({
-        title: '没找到糖果',
-        text: '糖果藏在亮起来的那张牌后面。再试一次吧。',
-        primary: '重试本关',
-        secondary: '选择关卡',
-        keepModal: true,
-        onPrimary: () => startLevel(levelIdx),
-        onSecondary: openLevels
+    const cards = dealCards();
+    renderBoard(cards);
+    renderHUD();
+    renderHearts();
+
+    setStatus(S.mode === 'find' ? '准备记住位置啦～' : '准备开始配对～');
+    await sleep(300);
+    if (token !== S.runToken) return;
+
+    if (S.mode === 'find') await findIntro(token);
+    else await pairIntro(token);
+  }
+
+  /* ---------- 8.3 找糖果：记忆 → 盖牌 → 洗牌 ---------- */
+  async function findIntro(token) {
+    setBusy(true);
+
+    S.cards.forEach((c) => c.el.classList.add('flipped'));
+    setStatus('记住 ' + label(S.target) + ' 在哪里～');
+
+    await waitWithBar(difficulty(S.level, S.cards.length).memorize, token);
+    if (token !== S.runToken) return;
+
+    S.cards.forEach((c) => c.el.classList.remove('flipped'));
+    await sleep(440);
+    if (token !== S.runToken) return;
+
+    setStatus('洗牌啦，眼睛别眨～');
+    await runShuffle(token);
+    if (token !== S.runToken) return;
+
+    setBusy(false);
+    setStatus('找出 ' + label(S.target) + ' 吧！');
+  }
+
+  /* ---------- 8.4 配对：偷看 → 盖上 ---------- */
+  async function pairIntro(token) {
+    setBusy(true);
+
+    S.cards.forEach((c) => c.el.classList.add('flipped'));
+    setStatus('看一眼，记住它们的位置～');
+
+    await waitWithBar(difficulty(S.level, S.cards.length).peek, token);
+    if (token !== S.runToken) return;
+
+    S.cards.forEach((c) => c.el.classList.remove('flipped'));
+    await sleep(440);
+    if (token !== S.runToken) return;
+
+    setBusy(false);
+    setStatus('翻开两张一样的牌吧！');
+  }
+
+  /* ---------- 8.5 FLIP 洗牌 ----------
+     用 flex 的 order 改变视觉顺序，而不是 appendChild 重排 DOM。
+     原因：节点一旦被移出/重新插入，CSS 入场动画会重新播放，洗牌时整桌牌会闪一下。 */
+  function shufflePass(dur) {
+    return new Promise((resolve) => {
+      const nodes = Array.prototype.slice.call(boardEl.querySelectorAll('.card'));
+      if (nodes.length < 2) { resolve(); return; }
+
+      // First：记录当前位置
+      const first = new Map();
+      nodes.forEach((el) => first.set(el, el.getBoundingClientRect()));
+
+      // 重新分配视觉顺序（不移动节点）
+      const order = shuffle(nodes);
+      order.forEach((el, i) => { el.style.order = String(i); });
+
+      // Last + Invert
+      const last = new Map();
+      order.forEach((el) => last.set(el, el.getBoundingClientRect()));
+      order.forEach((el) => {
+        const a = first.get(el);
+        const b = last.get(el);
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px)';
       });
+
+      void boardEl.offsetWidth; // 强制回流
+
+      // Play
+      requestAnimationFrame(() => {
+        order.forEach((el) => {
+          el.style.transition = 'transform ' + dur + 'ms cubic-bezier(.42,.02,.3,1)';
+          el.style.transform = 'translate(0,0)';
+        });
+      });
+
+      setTimeout(() => {
+        order.forEach((el) => {
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+        resolve();
+      }, dur + 40);
+    });
+  }
+
+  async function runShuffle(token) {
+    const diff = difficulty(S.level);
+    for (let p = 0; p < diff.passes; p++) {
+      if (token !== S.runToken) return;
+      Sound.whoosh();
+      await shufflePass(diff.shuffleDur);
+      await sleep(120);
+    }
+  }
+
+  /* ---------- 8.6 点击牌 ---------- */
+  function onCardTap(el) {
+    const card = S.cards.find((c) => c.uid === el.dataset.uid);
+    if (!card || S.busy || card.matched || card.flipped) return;
+
+    Sound.resume();
+    Sound.pop();
+    if (navigator.vibrate) {
+      try { navigator.vibrate(12); } catch (e) { /* ignore */ }
+    }
+
+    card.flipped = true;
+    el.classList.add('flipped');
+
+    if (S.mode === 'find') findTap(card);
+    else pairTap(card);
+  }
+
+  /* ---------- 8.7 找糖果判定 ---------- */
+  async function findTap(card) {
+    const el = card.el;
+
+    if (card.isTarget) {
+      setBusy(true);
+      el.classList.add('correct');
+      const r = el.getBoundingClientRect();
+      FX.burst(r.left + r.width / 2, r.top + r.height / 2, 26);
+      Sound.correct();
+      setStatus('找到啦！这是 ' + label(card.item) + ' 🎉');
+      await sleep(640);
+      winLevel();
       return;
     }
 
-    el.classList.add('is-back');
-    await wait(520);
-    if (my !== runId) return;
+    // 选错了：抖动 + 短暂亮出牌面（顺便认识它）
+    setBusy(true);
+    el.classList.add('shake');
+    Sound.wrong();
+    updateHearts(-1);
+    setStatus('这是 ' + label(card.item) + '，再找找看～');
 
-    beginPick();
+    await sleep(780);
+    if (!el.isConnected) return;
+    el.classList.remove('flipped', 'shake');
+    card.flipped = false;
+
+    if (S.hearts <= 0) { rescue(); return; }
+
+    setBusy(false);
+    pulseTarget(3200); // 第一次选错 → 目标牌呼吸灯提示
+  }
+
+  /* ---------- 8.8 配对判定 ---------- */
+  async function pairTap(card) {
+    if (!S.firstCard) {
+      S.firstCard = card;
+      // 有提示次数时：首张牌翻开后，让它的"另一半"发光
+      if (S.hintCharges > 0) {
+        S.hintCharges--;
+        pulsePartner(card, 1900);
+      }
+      return;
+    }
+
+    const first = S.firstCard;
+    S.firstCard = null;
+    setBusy(true);
+
+    if (first.pairId === card.pairId) {
+      first.matched = card.matched = true;
+      first.el.classList.add('matched', 'correct');
+      card.el.classList.add('matched', 'correct');
+
+      const r = card.el.getBoundingClientRect();
+      FX.burst(r.left + r.width / 2, r.top + r.height / 2, 20, ['✨', '⭐', '💫']);
+      Sound.correct();
+      if (CONFIG.lives.refillOnMatch) updateHearts(+1);
+
+      S.pairsDone++;
+      updateProgress();
+
+      if (S.pairsDone >= S.totalPairs) {
+        await sleep(460);
+        winLevel();
+        return;
+      }
+
+      setStatus('配对成功！再找一对吧～');
+      await sleep(340);
+      setBusy(false);
+      return;
+    }
+
+    // 配错
+    first.el.classList.add('shake');
+    card.el.classList.add('shake');
+    Sound.wrong();
+    updateHearts(-1);
+    S.hintCharges = Math.min(3, S.hintCharges + 1);
+    setStatus('这两张不一样，再看看～');
+
+    await sleep(680);
+    first.el.classList.remove('flipped', 'shake');
+    card.el.classList.remove('flipped', 'shake');
+    first.flipped = false;
+    card.flipped = false;
+
+    if (S.hearts <= 0) { rescue(); return; }
+    setBusy(false);
+  }
+
+  /* ---------- 8.9 提示 ---------- */
+  function pulseTarget(ms) {
+    const t = S.cards.find((c) => c.isTarget);
+    if (!t || !t.el) return;
+    t.el.classList.add('hint');
+    clearTimeout(S.hintTimer);
+    S.hintTimer = setTimeout(() => t.el.classList.remove('hint'), ms);
+  }
+
+  function pulsePartner(card, ms) {
+    const partner = S.cards.find((c) => c !== card && c.pairId === card.pairId && !c.matched);
+    if (!partner || !partner.el) return;
+    partner.el.classList.add('hint');
+    clearTimeout(S.hintTimer);
+    S.hintTimer = setTimeout(() => partner.el.classList.remove('hint'), ms);
+  }
+
+  /* ---------- 8.10 过关 ---------- */
+  function winLevel() {
+    setBusy(true);
+    S.mercy = 0;
+
+    const stars = S.hearts >= 3 ? 3 : (S.hearts === 2 ? 2 : 1);
+    const prevBest = starsOf(S.level);
+    const best = Math.max(prevBest, stars);
+
+    // 只增不减：重玩同一关取最高星，漏掉的星星随时可以补回来
+    if (best > prevBest) Save.data.starsByLevel[S.level] = best;
+    Save.recalcStars();
+    Save.markDirty();
+
+    Sound.win();
+    FX.rain(72);
+    setTimeout(() => FX.rain(44), 680);
+
+    showWin(best, prevBest, stars);
+
+    const p = pick(PRAISE);
+    speak(p.t.replace('！', '') + '！' + (S.mode === 'find' && S.target ? '你找到了' + S.target.n : ''));
+  }
+
+  function showWin(best, prevBest, earned) {
+    const p = pick(PRAISE);
+    $('celEmoji').textContent = p.e;
+    $('celTitle').textContent = p.t;
+    $('celSub').textContent = p.s;
+    $('celLevel').textContent = '第 ' + S.level + ' 关 · ' + levelName(S.level);
+
+    // 星星展示"本关最好成绩"，重玩时不会看起来变少
+    let starHTML = '';
+    for (let i = 0; i < 3; i++) {
+      starHTML += '<span class="star' + (i < best ? ' on' : '') + '" style="animation-delay:' + (i * 140) + 'ms">⭐</span>';
+    }
+    $('celStars').innerHTML = starHTML;
+
+    // 补星提示
+    let note = '';
+    if (S.isReplay) {
+      if (best > prevBest) note = '补到 ' + best + ' 颗星啦！';
+      else if (best >= 3) note = '本关已经满星啦 ⭐⭐⭐';
+      else note = '本关最好成绩 ' + best + ' 颗星';
+    } else if (best >= 3) {
+      note = '一次就拿到满星！';
+    }
+    $('celStarNote').textContent = note;
+
+    if (S.mode === 'find') {
+      $('celLearn').innerHTML = '<span class="cl-label">认识一下</span>' +
+        '<span class="cl-main">' + labelFull(S.target) + '</span>';
+    } else {
+      const names = S.pairItems.slice(0, 3).map(label).join('   ');
+      $('celLearn').innerHTML = '<span class="cl-label">配对成功</span>' +
+        '<span class="cl-main">' + names + (S.pairItems.length > 3 ? ' …' : '') + '</span>';
+    }
+
+    $('nextBtn').innerHTML = S.isReplay ? '返回关卡列表 📋' : '下一关 ▶';
+    $('winOverlay').classList.add('show');
   }
 
   function nextLevel() {
-    if (levelIdx + 1 < LEVELS.length) {
-      startLevel(levelIdx + 1);
+    hideOverlays();
+    S.level++;
+    S.mercy = 0;
+    S.isReplay = false;
+    Save.data.level = S.level;
+    Save.data.maxLevel = Math.max(Save.data.maxLevel, S.level);
+    Save.markDirty();
+    checkUnlock();
+    startLevel();
+  }
+
+  /* ---------- 8.11 生命耗尽：温柔重来 ---------- */
+  function rescue() {
+    setBusy(true);
+    setTimeout(() => {
+      $('rescueOverlay').classList.add('show');
+      Sound.sad();
+    }, 420);
+  }
+
+  function retryAfterRescue() {
+    hideOverlays();
+    S.mercy = Math.min(CONFIG.mercy.maxReduce, S.mercy + CONFIG.mercy.reducePerRetry);
+    setBusy(false);
+    startLevel();
+  }
+
+  /* ---------- 8.12 主题解锁 ---------- */
+  function checkUnlock() {
+    const fresh = CONFIG.themes.filter(
+      (t) => Save.data.maxLevel >= t.unlockLevel && !Save.data.unlocked.includes(t.id)
+    );
+    if (!fresh.length) return;
+    fresh.forEach((t) => Save.data.unlocked.push(t.id));
+    Save.markDirty();
+    showUnlock(fresh[0]);
+    Sound.chime();
+  }
+
+  function showUnlock(theme) {
+    showToast(theme.icon, '解锁新主题', theme.name + ' · 已解锁', 6000);
+  }
+
+  // 通用顶部提示条（解锁、导入、导出都复用）
+  function showToast(icon, title, sub, ms) {
+    $('toastIcon').textContent = icon;
+    $('toastTitle').textContent = title;
+    $('toastName').textContent = sub || '';
+    const toast = $('unlockToast');
+    toast.classList.add('show');
+    clearTimeout(S.toastTimer);
+    S.toastTimer = setTimeout(() => toast.classList.remove('show'), ms || 4200);
+  }
+
+  /* ---------- 8.15 存档备份（导出 / 导入） ---------- */
+  function updateStorageInfo() {
+    const el = $('saveInfo');
+    if (!el) return;
+    const info = Save.info();
+    if (info.failed) {
+      el.textContent = '⚠️ 本机写入失败，请尽快导出备份';
       return;
     }
+    const size = info.bytes ? (info.bytes / 1024).toFixed(1) + ' KB' : '0 KB';
+    let time = '';
+    if (info.savedAt) {
+      const d = new Date(info.savedAt);
+      time = ' · ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    el.textContent = '自动保存 · ' + size + time;
+  }
 
-    phase = 'done';
-    setHint('十关全部完成');
-    cards[targetIdx].el.querySelector('.face.front').classList.add('is-target');
-    showModal({
-      title: '十关全通！',
-      text: '你找到了所有糖果，反应和记忆都很稳。',
-      primary: '从第一关再来',
-      secondary: '选择关卡',
-      keepModal: true,
-      onPrimary: () => startLevel(0),
-      onSecondary: openLevels
+  function exportSaveFile() {
+    try {
+      const payload = Save.exportPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '找到那颗糖-存档-' + stamp + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      updateStorageInfo();
+      showToast('💾', '存档已导出', '换设备时用「导入」恢复', 4200);
+    } catch (e) {
+      showToast('⚠️', '导出失败', '请检查浏览器是否允许下载', 4200);
+    }
+  }
+
+  function handleImportFile(file) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('⚠️', '文件太大', '这不是游戏的存档文件', 4200);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = Save.importText(String(reader.result || ''));
+      if (!res.ok) {
+        showToast('⚠️', '导入失败', '文件格式不正确', 4200);
+        return;
+      }
+      // 同步内存状态并回到首页，避免停留在旧的关卡里
+      S.mode = Save.data.mode;
+      S.themeId = Save.data.themeId;
+      Sound.setMuted(Save.data.muted);
+      goHome();
+      updateStorageInfo();
+      Sound.resume();
+      Sound.chime();
+      showToast('📥', '导入成功', '共 ' + res.totalStars + ' 颗星 · 第 ' + res.maxLevel + ' 关', 5000);
+    };
+    reader.onerror = () => showToast('⚠️', '读取失败', '请重试或换个文件', 4000);
+    reader.readAsText(file, 'utf-8');
+  }
+
+  /* ---------- 8.13 语音鼓励 ---------- */
+  function speak(text) {
+    if (!Save.data.voice || Save.data.muted) return;
+    if (!('speechSynthesis' in window) || !text) return;
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      const zh = voices.find((v) => /zh[-_]?CN|Chinese|中文|普通话/i.test(v.lang + ' ' + v.name));
+      if (voices.length && !zh) return; // 没有中文语音包就别读了
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.rate = 0.95;
+      u.pitch = 1.15;
+      u.volume = 0.9;
+      if (zh) u.voice = zh;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* ignore */ }
+  }
+  // 预热语音列表（部分浏览器异步返回）
+  if ('speechSynthesis' in window) {
+    try { window.speechSynthesis.getVoices(); } catch (e) { /* ignore */ }
+  }
+
+  /* ---------- 8.14 通用弹层 ---------- */
+  function hideOverlays() {
+    ['winOverlay', 'rescueOverlay', 'pauseOverlay', 'levelsOverlay'].forEach((id) => $(id).classList.remove('show'));
+  }
+
+  function goHome() {
+    S.runToken++;      // 取消未完成的异步流程
+    setBusy(true);
+    clearTimeout(S.hintTimer);
+    hideOverlays();
+    closeLevels();
+    S.isReplay = false;
+    S.level = Save.data.maxLevel;  // 回首页后"开始"永远指向最新一关
+    $('parentOverlay').classList.remove('show');
+    applyTheme(currentTheme());
+    renderHome();
+    switchScreen('home');
+  }
+
+  /* ==========================================================
+   * 9. 事件绑定
+   * ========================================================== */
+  function bindEvents() {
+    /* 首页：玩法 */
+    $('modeRow').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-mode]');
+      if (!btn) return;
+      Sound.resume();
+      Sound.pop();
+      S.mode = btn.dataset.mode;
+      Save.data.mode = S.mode;
+      Save.markDirty();
+      renderHome();
+    });
+
+    /* 首页：主题 */
+    $('themeRow').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-theme]');
+      if (!btn) return;
+      const theme = CONFIG.themes.find((t) => t.id === btn.dataset.theme);
+      if (!theme) return;
+      if (!Save.data.unlocked.includes(theme.id)) {
+        Sound.pop();
+        const left = Math.max(1, theme.unlockLevel - Save.data.maxLevel);
+        $('homeStats').textContent = '再玩 ' + left + ' 关，就能解锁「' + theme.name + '」啦～';
+        return;
+      }
+      Sound.resume();
+      Sound.pop();
+      S.themeId = theme.id;
+      Save.data.themeId = theme.id;
+      Save.markDirty();
+      applyTheme(theme);
+      renderHome();
+    });
+
+    /* 开始（始终从最新一关开始） */
+    $('startBtn').addEventListener('click', () => {
+      Sound.resume();
+      Sound.pop();
+      S.level = Save.data.maxLevel;
+      S.isReplay = false;
+      S.mercy = 0;                 // 从首页开始 = 全新一关，清掉"减负"状态
+      Save.data.mode = S.mode;
+      Save.data.themeId = S.themeId;
+      Save.markDirty();
+      applyTheme(currentTheme());
+      switchScreen('game');
+      setBusy(false);
+      startLevel();
+    });
+
+    /* 游戏中：返回首页 */
+    $('homeBtn').addEventListener('click', () => {
+      Sound.pop();
+      goHome();
+    });
+
+    /* 静音 */
+    muteBtn.addEventListener('click', () => {
+      Sound.resume();
+      Save.data.muted = !Save.data.muted;
+      Save.markDirty();
+      Sound.setMuted(Save.data.muted);
+      muteBtn.textContent = Save.data.muted ? '🔇' : '🔊';
+      muteBtn.classList.toggle('is-off', Save.data.muted);
+      syncSettingsUI();
+      if (!Save.data.muted) Sound.pop();
+    });
+
+    /* 暂停 */
+    $('pauseBtn').addEventListener('click', () => {
+      if (S.busy) { Sound.pop(); return; }
+      Sound.pop();
+      $('pauseOverlay').classList.add('show');
+    });
+    $('pauseResume').addEventListener('click', () => {
+      Sound.pop();
+      $('pauseOverlay').classList.remove('show');
+    });
+    $('pauseLevels').addEventListener('click', () => {
+      Sound.pop();
+      $('pauseOverlay').classList.remove('show');
+      openLevels();
+    });
+    $('pauseRestart').addEventListener('click', () => {
+      Sound.pop();
+      $('pauseOverlay').classList.remove('show');
+      S.mercy = 0;
+      startLevel();
+    });
+    $('pauseHome').addEventListener('click', goHome);
+
+    /* 牌桌 */
+    boardEl.addEventListener('click', (e) => {
+      const el = e.target.closest('.card');
+      if (!el) return;
+      onCardTap(el);
+    });
+    boardEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    /* 过关 → 下一关 / 补星后回列表 */
+    $('nextBtn').addEventListener('click', () => {
+      Sound.pop();
+      if (S.isReplay) {
+        goHome();
+        openLevels();
+        return;
+      }
+      nextLevel();
+    });
+
+    /* ---------- 关卡列表 ---------- */
+    $('levelsBtn').addEventListener('click', () => {
+      Sound.resume();
+      Sound.pop();
+      openLevels();
+    });
+    $('levelsClose').addEventListener('click', () => {
+      Sound.pop();
+      closeLevels();
+    });
+    $('chapPrev').addEventListener('click', () => {
+      Sound.pop();
+      S.chapView = Math.max(1, S.chapView - 1);
+      renderLevels();
+    });
+    $('chapNext').addEventListener('click', () => {
+      Sound.pop();
+      S.chapView = Math.min(chapterOf(Save.data.maxLevel), S.chapView + 1);
+      renderLevels();
+    });
+    $('levelGrid').addEventListener('click', (e) => {
+      const card = e.target.closest('.lv-card');
+      if (!card) return;
+      const lv = parseInt(card.dataset.level, 10);
+      if (!lv || lv > Save.data.maxLevel) {
+        Sound.pop();
+        return;
+      }
+      Sound.resume();
+      Sound.pop();
+      startFromList(lv);
+    });
+    $('levelsOverlay').addEventListener('click', (e) => {
+      if (e.target === $('levelsOverlay')) closeLevels();
+    });
+
+    /* 复活 */
+    $('rescueRetry').addEventListener('click', () => { Sound.pop(); retryAfterRescue(); });
+    $('rescueHome').addEventListener('click', goHome);
+
+    /* 家长面板 */
+    $('parentLink').addEventListener('click', () => {
+      Sound.resume();
+      syncSettingsUI();
+      updateStorageInfo();
+      $('parentOverlay').classList.add('show');
+    });
+
+    /* 首页缓存提示条 → 打开家长面板（备份入口） */
+    $('saveWarnBtn').addEventListener('click', () => {
+      Sound.resume();
+      Sound.pop();
+      syncSettingsUI();
+      updateStorageInfo();
+      $('parentOverlay').classList.add('show');
+    });
+
+    /* 存档导出 / 导入 */
+    $('exportBtn').addEventListener('click', () => {
+      Sound.pop();
+      exportSaveFile();
+    });
+    $('importBtn').addEventListener('click', () => {
+      Sound.pop();
+      $('importFile').click();
+    });
+    $('importFile').addEventListener('change', function () {
+      const file = this.files && this.files[0];
+      this.value = '';           // 允许连续导入同一个文件
+      handleImportFile(file);
+    });
+    $('parentClose').addEventListener('click', () => {
+      $('parentOverlay').classList.remove('show');
+    });
+    $('parentOverlay').addEventListener('click', (e) => {
+      if (e.target === $('parentOverlay')) $('parentOverlay').classList.remove('show');
+    });
+
+    /* 设置：音效 / 语音 / 重置 */
+    $('switchSound').addEventListener('click', () => {
+      Save.data.muted = !Save.data.muted;
+      Save.markDirty();
+      Sound.setMuted(Save.data.muted);
+      if (!Save.data.muted) Sound.pop();
+      syncSettingsUI();
+    });
+
+    $('switchVoice').addEventListener('click', () => {
+      Save.data.voice = !Save.data.voice;
+      Save.markDirty();
+      syncSettingsUI();
+      if (Save.data.voice) speak('语音已打开');
+    });
+
+    $('resetProgress').addEventListener('click', function () {
+      const btn = this;
+      if (!S.resetArmed) {
+        S.resetArmed = true;
+        btn.textContent = '再点一次';
+        setTimeout(() => { S.resetArmed = false; btn.textContent = '重置'; }, 3000);
+        return;
+      }
+      S.resetArmed = false;
+      btn.textContent = '重置';
+      Save.clear();          // 主快照、备份、损坏留证、旧存档一并清掉
+      S.level = 1;
+      S.mode = 'find';
+      S.themeId = 'fruit';
+      S.mercy = 0;
+      S.isReplay = false;
+      S.chapView = 1;
+      Sound.setMuted(Save.data.muted);
+      applyTheme(currentTheme());
+      renderHome();
+      syncSettingsUI();
+      $('parentOverlay').classList.remove('show');
+      closeLevels();
+      switchScreen('home');
+      setStatus('进度已重置');
+      S.runToken++;
+    });
+
+    /* 解锁提示关闭 */
+    $('toastBtn').addEventListener('click', () => {
+      clearTimeout(S.toastTimer);
+      $('unlockToast').classList.remove('show');
+    });
+
+    /* 浏览器策略：首次触摸时创建 AudioContext */
+    document.addEventListener('pointerdown', function once() {
+      Sound.resume();
+    }, { passive: true });
+
+    /* 切后台时静音，回来恢复（避免"后台还在响"） */
+    document.addEventListener('visibilitychange', () => {
+      if (!Sound.ac) return;
+      if (document.hidden) {
+        Sound.master.gain.value = 0;
+      } else {
+        Sound.master.gain.value = Save.data.muted ? 0 : CONFIG.audio.volume;
+      }
     });
   }
 
-  /* ---------- 手动洗牌 ---------- */
-  shuffleBtn.addEventListener('click', async () => {
-    if (phase !== 'pick') return;
-    const my = runId;
+  function syncSettingsUI() {
+    const s1 = $('switchSound');
+    s1.textContent = Save.data.muted ? '关' : '开';
+    s1.classList.toggle('on', !Save.data.muted);
+    s1.classList.toggle('warn', Save.data.muted);
 
-    phase = 'shuffle';
-    shuffleBtn.disabled = true;
-    stage.classList.remove('pickable');
-    setHint('自己洗一次 · 盯紧它');
-    await doShuffle();
-    if (my !== runId) return;
+    const s2 = $('switchVoice');
+    s2.textContent = Save.data.voice ? '开' : '关';
+    s2.classList.toggle('on', Save.data.voice);
+    s2.classList.toggle('warn', !Save.data.voice);
 
-    beginPick();
-  });
+    muteBtn.textContent = Save.data.muted ? '🔇' : '🔊';
+    muteBtn.classList.toggle('is-off', Save.data.muted);
+    $('progressText').textContent = '第 ' + Save.data.maxLevel + ' 关 · ⭐ ' + Save.data.totalStars;
+  }
 
-  restartBtn.addEventListener('click', () => {
-    startLevel(levelIdx);
-  });
+  /* ==========================================================
+   * 10. 启动
+   * ========================================================== */
+  function init() {
+    boardEl = $('board');
+    statusEl = $('statusText');
+    heartsEl = $('hearts');
+    hudLevelEl = $('hudLevel');
+    hudThemeEl = $('hudTheme');
+    targetChip = $('targetChip');
+    progressChip = $('progressChip');
+    muteBtn = $('muteBtn');
 
-  /* ---------- 牌桌点击 ---------- */
-  stage.addEventListener('click', (e) => {
-    if (phase !== 'pick') return;
-    const el = e.target.closest('.card');
-    if (!el) return;
-    pickCard(Number(el.dataset.idx));
-  });
+    const source = Save.load();
+    S.level = Save.data.maxLevel;
+    S.mode = Save.data.mode;
+    S.themeId = Save.data.themeId;
+    Sound.muted = Save.data.muted;
 
-  /* ---------- 飘叶 ---------- */
-  (function makePetals() {
-    const box = document.getElementById('petals');
-    for (let i = 0; i < 9; i++) {
-      const p = document.createElement('i');
-      p.className = 'petal';
-      p.style.left = (Math.random() * 100).toFixed(1) + '%';
-      p.style.animationDuration = (14 + Math.random() * 12).toFixed(1) + 's';
-      p.style.animationDelay = (-Math.random() * 20).toFixed(1) + 's';
-      const s = 0.75 + Math.random() * 0.85;
-      p.style.width = 'calc(' + (14 * s).toFixed(1) + 'px * var(--u))';
-      p.style.height = p.style.width;
-      p.style.background = Math.random() > 0.45 ? '#b0d485' : '#f3d98b';
-      box.appendChild(p);
+    applyTheme(currentTheme());
+    FX.init();
+    renderHome();
+    renderHearts();
+    bindEvents();
+    syncSettingsUI();
+
+    // 主存档坏了、从备份恢复时，明确告诉家长
+    if (source === 'backup') {
+      setTimeout(() => showToast('🛟', '已从备份恢复', '主存档读取失败，已用上一次备份继续', 6000), 900);
     }
-  })();
 
-  /* ---------- 启动 ---------- */
-  fitFrame();
-  buildLevelGrid();
+    // 多标签页：另一个窗口写了新进度 → 合并进来，不覆盖
+    window.addEventListener('storage', (e) => {
+      if (e.key !== CONFIG.saveKey || !e.newValue) return;
+      const env = Save.parseEnvelope(e.newValue, 'storage');
+      if (!env || env.savedAt <= Save.loadedAt) return;
+      Save.mergeRaw(env.data, true);
+      Save.loadedAt = env.savedAt;
+      S.level = Save.data.maxLevel;
+      S.mode = Save.data.mode;
+      S.themeId = Save.data.themeId;
+      Sound.setMuted(Save.data.muted);
+      applyTheme(currentTheme());
+      renderHome();
+      syncSettingsUI();
+      showToast('🔄', '进度已同步', '另一个窗口的进度已合并', 3600);
+    });
 
-  let resizeTimer = null;
-  function handleViewportChange() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      fitFrame();
-      if (phase === 'shuffle' || phase === 'reveal') return;
-      layout();
-    }, 160);
+    // 关页面/切后台前再兜一次（正常情况下每次操作已即时落盘）
+    window.addEventListener('pagehide', () => Save.flush());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) Save.flush();
+    });
+
+    // 预取语音列表（部分浏览器异步返回）
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.getVoices(); } catch (e) { /* ignore */ }
+    }
   }
 
-  window.addEventListener('resize', handleViewportChange);
-  window.addEventListener('orientationchange', handleViewportChange);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', handleViewportChange);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
-
-  startLevel(0);
 })();
 </script>
 </body>
