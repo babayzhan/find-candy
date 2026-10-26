@@ -162,6 +162,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 .mode-icon{font-size:25px;line-height:1.15}
 .mode-name{font-size:14px;font-weight:800}
 .mode-desc{font-size:9.8px;line-height:1.3;color:var(--ink-2);text-align:center}
+.mode-desc.is-progress{color:var(--accent-deep);font-weight:800;font-size:10.5px}
 
 .theme-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .theme-chip{
@@ -1170,34 +1171,85 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   ];
 
   /* ==========================================================
-   * 3. 存档（自动保存 + 主备双键 + 校验迁移 + 导入导出）
+   * 3. 存档（按玩法独立进度 + 自动保存 + 主备双键 + 导入导出）
    * ----------------------------------------------------------
-   * 存储结构（全部在 localStorage，同源）：
-   *   tangguo.save.v3         主快照 { app, schema, savedAt, data }
+   * 存储结构（localStorage，同源）：
+   *   tangguo.save.v3  { app, schema, savedAt, data }
+   *     data = {
+   *       version: 5,
+   *       mode: 'find' | 'pair',        // 上次玩的玩法（仅偏好）
+   *       themes: { find: 'fruit', pair: 'animal' },  // 每种玩法各记一个主题
+   *       muted, voice,
+   *       modes: {
+   *         find: { maxLevel, starsByLevel },   // 找糖果：独立关卡进度
+   *         pair: { maxLevel, starsByLevel }    // 翻牌配对：独立关卡进度
+   *       }
+   *     }
+   *   主题解锁不落盘，由该玩法的 maxLevel 推导：
+   *   同一关数在两边的解锁结果可以不同。
    *   tangguo.save.v3.bak     上一次写入成功的完整快照（影子备份）
-   *   tangguo.save.v3.corrupt 解析失败时的原始字符串（最多 4KB，便于排查）
+   *   tangguo.save.v3.corrupt 解析失败时的原始字符串（最多 4KB）
    *   tangguo_memory_v2       旧版存档，仅读取迁移，不再写入
    *
    * 读：主快照 → 备份 → 旧存档 → 默认值；逐级校验，坏字段单条丢弃
    * 写：任何操作后 markDirty() 立即同步落盘（约 1KB，耗时 <1ms）
    * ========================================================== */
-  const DEFAULT_SAVE = {
-    version: 3,
-    level: 1,
-    maxLevel: 1,
-    mode: 'find',
-    themeId: 'fruit',
-    muted: false,
-    voice: true,
-    totalStars: 0,
-    // 每关的最好成绩：{ "3": 2 } 表示第 3 关拿到过 2 颗星。
-    // 只增不减，重玩同一关取 max()，所以漏掉的星星永远可以补回来。
-    starsByLevel: {},
-    unlocked: ['fruit']
-  };
+  function emptyModeProgress() {
+    return { maxLevel: 1, starsByLevel: {} };
+  }
+
+  // 单玩法进度校验：坏条目丢弃，不牵连其它关卡与其它玩法
+  function normalizeModeProgress(src) {
+    const raw = (src && typeof src === 'object') ? src : {};
+    const stars = {};
+    const table = (raw.starsByLevel && typeof raw.starsByLevel === 'object') ? raw.starsByLevel : {};
+    Object.keys(table).forEach((k) => {
+      const lv = parseInt(k, 10);
+      const n = clamp(parseInt(table[k], 10) || 0, 0, 3);
+      if (lv >= 1 && lv <= 9999 && n > 0) stars[lv] = n;
+    });
+
+    // 更老的存档只有累计星数：按已通关关卡回填
+    if (Object.keys(stars).length === 0 && (parseInt(raw.totalStars, 10) || 0) > 0) {
+      let left = Math.min(parseInt(raw.totalStars, 10) || 0, 9999);
+      const maxLv = Math.max(1, parseInt(raw.maxLevel, 10) || 1);
+      for (let i = 1; i < maxLv && left > 0; i++) {
+        const n = Math.min(3, left);
+        stars[i] = n;
+        left -= n;
+      }
+    }
+
+    let maxLevel = clamp(parseInt(raw.maxLevel, 10) || 1, 1, 9999);
+    Object.keys(stars).forEach((k) => { if (+k > maxLevel) maxLevel = +k; });
+    return { maxLevel: maxLevel, starsByLevel: stars };
+  }
+
+  function isThemeUnlocked(themeId, maxLevel) {
+    const t = CONFIG.themes.find((x) => x.id === themeId);
+    return !!t && maxLevel >= t.unlockLevel;
+  }
+
+  function makeDefaultSave() {
+    const d = {
+      version: 5,
+      mode: 'find',
+      themes: {},
+      muted: false,
+      voice: true,
+      modes: {}
+    };
+    Object.keys(CONFIG.modes).forEach((id) => {
+      d.modes[id] = emptyModeProgress();
+      d.themes[id] = 'fruit';
+    });
+    return d;
+  }
+
+  const DEFAULT_SAVE = makeDefaultSave();
 
   const Save = {
-    data: Object.assign({}, DEFAULT_SAVE, { starsByLevel: {} }),
+    data: makeDefaultSave(),
     loadedAt: 0,      // 内存快照对应的 savedAt，用于判断"别的标签页是否更新过"
     lastSavedAt: 0,
     dirty: false,
@@ -1278,68 +1330,99 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       }
     },
 
-    /* ---------------- 校验 / 归一化 ----------------
-       不管数据来自哪里（本机、备份、旧版、导入文件），都从这里过一遍：
-       非法关卡号、非 0-3 的星数直接丢弃，而不是让整份存档作废。 */
-    normalize(input) {
-      const raw = (input && typeof input === 'object') ? input : {};
-
-      const stars = {};
-      const src = (raw.starsByLevel && typeof raw.starsByLevel === 'object') ? raw.starsByLevel : {};
-      Object.keys(src).forEach((k) => {
-        const lv = parseInt(k, 10);
-        const s = clamp(parseInt(src[k], 10) || 0, 0, 3);
-        if (lv >= 1 && lv <= 9999 && s > 0) stars[lv] = s;
-      });
-
-      // 旧存档只有累计星数：按已通关关卡回填，保证总数不丢
-      if (Object.keys(stars).length === 0 && (parseInt(raw.totalStars, 10) || 0) > 0) {
-        let left = Math.min(parseInt(raw.totalStars, 10) || 0, 9999);
-        const maxLv = Math.max(1, parseInt(raw.maxLevel, 10) || 1);
-        for (let i = 1; i < maxLv && left > 0; i++) {
-          const s = Math.min(3, left);
-          stars[i] = s;
-          left -= s;
-        }
-      }
-
-      let maxLevel = clamp(parseInt(raw.maxLevel, 10) || 1, 1, 9999);
-      Object.keys(stars).forEach((k) => { if (+k > maxLevel) maxLevel = +k; });
-
-      const d = {
-        version: 3,
-        level: maxLevel,
-        maxLevel: maxLevel,
-        mode: CONFIG.modes[raw.mode] ? raw.mode : 'find',
-        themeId: CONFIG.themes.some((t) => t.id === raw.themeId) ? raw.themeId : 'fruit',
-        muted: !!raw.muted,
-        voice: raw.voice !== false,
-        totalStars: 0,
-        starsByLevel: stars,
-        unlocked: []
-      };
-
-      const unlocked = Array.isArray(raw.unlocked)
-        ? raw.unlocked.filter((id) => CONFIG.themes.some((t) => t.id === id))
-        : [];
-      CONFIG.themes.forEach((t) => { if (maxLevel >= t.unlockLevel) unlocked.push(t.id); });
-      d.unlocked = Array.from(new Set(unlocked));
-      if (!d.unlocked.includes(d.themeId)) d.themeId = 'fruit';
-
-      let sum = 0;
-      Object.keys(stars).forEach((k) => { sum += stars[k]; });
-      d.totalStars = sum;
-      return d;
+    /* ---------------- 当前玩法的进度访问器 ----------------
+       所有结算与显示都走这里，避免直接读全局字段串味。 */
+    progress(modeId) {
+      const id = modeId || this.data.mode;
+      if (!this.data.modes[id]) this.data.modes[id] = emptyModeProgress();
+      return this.data.modes[id];
     },
 
-    // 总星数永远由每关成绩汇总得出，重玩补星后会自然增加，不会重复计数
-    recalcStars() {
+    maxLevel(modeId) {
+      return this.progress(modeId).maxLevel;
+    },
+
+    starsOf(level, modeId) {
+      return clamp(parseInt(this.progress(modeId).starsByLevel[level], 10) || 0, 0, 3);
+    },
+
+    totalStars(modeId) {
+      const table = this.progress(modeId).starsByLevel;
       let sum = 0;
-      Object.keys(this.data.starsByLevel).forEach((k) => {
-        sum += clamp(parseInt(this.data.starsByLevel[k], 10) || 0, 0, 3);
-      });
-      this.data.totalStars = sum;
+      Object.keys(table).forEach((k) => { sum += clamp(parseInt(table[k], 10) || 0, 0, 3); });
       return sum;
+    },
+
+    clearedCount(modeId) {
+      return Object.keys(this.progress(modeId).starsByLevel).length;
+    },
+
+    // 只推进、不回退（重玩旧关不会把进度倒回去）
+    // 返回 true 表示确实推进了前沿（用于只在实际进步时提示解锁）
+    setMaxLevel(level) {
+      const p = this.progress();
+      const v = clamp(parseInt(level, 10) || 1, 1, 9999);
+      if (v > p.maxLevel) { p.maxLevel = v; return true; }
+      return false;
+    },
+
+    // 主题解锁完全由该玩法的关卡进度推导，两种玩法各算各的
+    unlocked(modeId) {
+      const max = this.maxLevel(modeId);
+      return CONFIG.themes.filter((t) => max >= t.unlockLevel).map((t) => t.id);
+    },
+
+    // 当前玩法选中的主题（一定落在该玩法的解锁范围内）
+    themeId(modeId) {
+      const id = modeId || this.data.mode;
+      const t = this.data.themes[id];
+      return (t && isThemeUnlocked(t, this.maxLevel(id))) ? t : 'fruit';
+    },
+
+    setTheme(themeId) {
+      if (!this.unlocked().includes(themeId)) return false;
+      this.data.themes[this.data.mode] = themeId;
+      return true;
+    },
+
+    /* ---------------- 校验 / 归一化 ----------------
+       不管数据来自哪里（本机、备份、旧版、导入文件），都从这里过一遍。 */
+    normalize(input) {
+      const raw = (input && typeof input === 'object') ? input : {};
+      const curMode = CONFIG.modes[raw.mode] ? raw.mode : 'find';
+
+      const modes = {};
+      Object.keys(CONFIG.modes).forEach((id) => {
+        modes[id] = normalizeModeProgress(raw.modes && raw.modes[id]);
+      });
+
+      // v3 及更早：进度存在顶层，归到"当时正在玩的那一种玩法"
+      if (!raw.modes || typeof raw.modes !== 'object') {
+        modes[curMode] = normalizeModeProgress(raw);
+      }
+
+      // 主题选择：每种玩法各记一个，且必须在该玩法里已解锁
+      const legacyTheme = CONFIG.themes.some((t) => t.id === raw.themeId) ? raw.themeId : null;
+      const themes = {};
+      Object.keys(CONFIG.modes).forEach((id) => {
+        const saved = (raw.themes && typeof raw.themes === 'object') ? raw.themes[id] : null;
+        const want = CONFIG.themes.some((t) => t.id === saved) ? saved : (legacyTheme || 'fruit');
+        themes[id] = isThemeUnlocked(want, modes[id].maxLevel) ? want : 'fruit';
+      });
+
+      return {
+        version: 5,
+        mode: curMode,
+        themes: themes,
+        muted: !!raw.muted,
+        voice: raw.voice !== false,
+        modes: modes
+      };
+    },
+
+    // 兼容旧调用：总星数现在是派生值
+    recalcStars() {
+      return this.totalStars();
     },
 
     /* ---------------- 写入 ---------------- */
@@ -1355,7 +1438,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       // 先合并别的标签页刚写进去的进度，避免互相覆盖
       this.pullLatest();
 
-      this.recalcStars();
       const env = {
         app: 'tangguo-memory',
         schema: 3,
@@ -1396,7 +1478,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       this.source = 'primary';
     },
 
-    // 别的标签页刚写过 → 把自己的内存合并进去（星星取大、进度取远）
+    // 别的标签页刚写过 → 把自己的内存合并进去（每种玩法各自取大）
     pullLatest() {
       const env = this.readEnvelope(CONFIG.saveKey, 'primary');
       if (!env || env.savedAt <= this.loadedAt) return false;
@@ -1405,40 +1487,33 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       return true;
     },
 
-    // 合并：逐关取最高星、进度取最远、主题解锁取并集；设置可按需跟随
+    // 合并：每种玩法逐关取最高星、进度取最远；主题解锁取并集
     mergeRaw(other, takeSettings) {
       if (!other || typeof other !== 'object') return false;
       const incoming = this.normalize(other);
       let changed = false;
 
-      Object.keys(incoming.starsByLevel).forEach((k) => {
-        if (incoming.starsByLevel[k] > (this.data.starsByLevel[k] || 0)) {
-          this.data.starsByLevel[k] = incoming.starsByLevel[k];
-          changed = true;
-        }
-      });
-
-      if (incoming.maxLevel > this.data.maxLevel) {
-        this.data.maxLevel = incoming.maxLevel;
-        this.data.level = incoming.maxLevel;
-        changed = true;
-      }
-
-      incoming.unlocked.forEach((id) => {
-        if (!this.data.unlocked.includes(id)) {
-          this.data.unlocked.push(id);
+      Object.keys(incoming.modes).forEach((id) => {
+        const inc = incoming.modes[id];
+        const cur = this.progress(id);
+        Object.keys(inc.starsByLevel).forEach((k) => {
+          if (inc.starsByLevel[k] > (cur.starsByLevel[k] || 0)) {
+            cur.starsByLevel[k] = inc.starsByLevel[k];
+            changed = true;
+          }
+        });
+        if (inc.maxLevel > cur.maxLevel) {
+          cur.maxLevel = inc.maxLevel;
           changed = true;
         }
       });
 
       if (takeSettings) {
-        this.data.mode = incoming.mode;
-        this.data.themeId = this.data.unlocked.includes(incoming.themeId) ? incoming.themeId : this.data.themeId;
+        // 不合并 mode / 主题选择，避免另一个窗口把当前玩法或主题切走。
+        // 主题解锁是从 maxLevel 推导的，进度合并后自然生效。
         this.data.muted = incoming.muted;
         this.data.voice = incoming.voice;
       }
-
-      this.recalcStars();
       return changed;
     },
 
@@ -1451,36 +1526,53 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
         schema: 3,
         exportedAt: new Date().toISOString(),
         summary: {
-          maxLevel: this.data.maxLevel,
-          stars: this.data.totalStars,
-          cleared: Object.keys(this.data.starsByLevel).length
+          mode: this.data.mode,
+          maxLevel: this.maxLevel(),
+          stars: this.totalStars(),
+          cleared: this.clearedCount(),
+          find: { maxLevel: this.maxLevel('find'), stars: this.totalStars('find') },
+          pair: { maxLevel: this.maxLevel('pair'), stars: this.totalStars('pair') }
         },
         data: this.data
       };
     },
 
-    // 导入不覆盖本机进度，而是"合并"：两边取更好的，永远不倒退
+    // 导入不覆盖本机进度，而是"合并"：两边（含两种玩法）取更好的，永远不倒退
     importText(text) {
       let obj;
       try { obj = JSON.parse(text); } catch (e) { return { ok: false, reason: 'json' }; }
 
       const data = (obj && obj.data && typeof obj.data === 'object') ? obj.data : obj;
       if (!data || typeof data !== 'object') return { ok: false, reason: 'shape' };
-      if (!data.starsByLevel && data.maxLevel == null && data.totalStars == null) {
+      const hasModes = !!(data.modes && typeof data.modes === 'object');
+      if (!hasModes && !data.starsByLevel && data.maxLevel == null && data.totalStars == null) {
         return { ok: false, reason: 'shape' };
       }
 
-      const beforeStars = this.data.totalStars;
-      const beforeLevels = Object.keys(this.data.starsByLevel).length;
+      // 统计两种玩法的合计，避免"当前玩法是 0 星"时提示看起来像没导入成功
+      const totalAll = () => {
+        let n = 0;
+        Object.keys(CONFIG.modes).forEach((id) => { n += this.totalStars(id); });
+        return n;
+      };
+      const levelsAll = () => {
+        let n = 0;
+        Object.keys(CONFIG.modes).forEach((id) => { n += this.clearedCount(id); });
+        return n;
+      };
+
+      const beforeStars = totalAll();
+      const beforeLevels = levelsAll();
       this.mergeRaw(data, true);
       this.markDirty();
 
       return {
         ok: true,
-        levels: Object.keys(this.data.starsByLevel).length - beforeLevels,
-        stars: this.data.totalStars - beforeStars,
-        totalStars: this.data.totalStars,
-        maxLevel: this.data.maxLevel
+        addedStars: totalAll() - beforeStars,
+        addedLevels: levelsAll() - beforeLevels,
+        totalStars: totalAll(),
+        findMax: this.maxLevel('find'),
+        pairMax: this.maxLevel('pair')
       };
     },
 
@@ -1523,12 +1615,12 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   }
 
   function starsOf(level) {
-    return clamp(parseInt(Save.data.starsByLevel[level], 10) || 0, 0, 3);
+    return Save.starsOf(level);
   }
 
-  // 已通关关卡数（有成绩即视为通关）
+  // 已通关关卡数（当前玩法）
   function clearedCount() {
-    return Object.keys(Save.data.starsByLevel).length;
+    return Save.clearedCount();
   }
 
   function chapterStarSum(chapter) {
@@ -1877,16 +1969,23 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     const modeRow = $('modeRow');
     modeRow.innerHTML = Object.keys(CONFIG.modes).map((key) => {
       const m = CONFIG.modes[key];
+      const p = Save.progress(key);
+      const played = p.maxLevel > 1 || Save.clearedCount(key) > 0;
+      // 玩过之后这里显示该玩法自己的进度，新玩家仍看到玩法说明
+      const sub = played
+        ? ('第 ' + p.maxLevel + ' 关 · ⭐ ' + Save.totalStars(key))
+        : m.desc;
       return '<button type="button" class="mode-card' + (S.mode === key ? ' on' : '') + '" data-mode="' + key + '">' +
         '<span class="mode-icon">' + m.icon + '</span>' +
         '<span class="mode-name">' + m.name + '</span>' +
-        '<span class="mode-desc">' + m.desc + '</span>' +
+        '<span class="mode-desc' + (played ? ' is-progress' : '') + '">' + sub + '</span>' +
         '</button>';
     }).join('');
 
     const themeRow = $('themeRow');
+    const unlockedIds = Save.unlocked();
     themeRow.innerHTML = CONFIG.themes.map((t) => {
-      const locked = !Save.data.unlocked.includes(t.id);
+      const locked = !unlockedIds.includes(t.id);
       const on = S.themeId === t.id && !locked;
       return '<button type="button" class="theme-chip' + (on ? ' on' : '') + (locked ? ' locked' : '') + '"' +
         ' data-theme="' + t.id + '"' + (locked ? ' aria-disabled="true"' : '') + '>' +
@@ -1898,17 +1997,17 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     $('startBtn').innerHTML = '开始第 <b>' + S.level + '</b> 关 <span class="arrow">▶</span>';
 
-    const themeCount = CONFIG.themes.filter((t) => Save.data.unlocked.includes(t.id)).length;
     $('levelsBtnSub').textContent = '已通关 ' + clearedCount() + ' 关';
-    $('homeStats').textContent = '⭐ 已收集 ' + Save.data.totalStars + ' 颗星 · 已解锁 ' +
-      themeCount + '/' + CONFIG.themes.length + ' 个主题';
+    $('homeStats').textContent = '⭐ 已收集 ' + Save.totalStars() + ' 颗星 · 已通关 ' + clearedCount() + ' 关';
 
-    $('progressText').textContent = '第 ' + Save.data.maxLevel + ' 关 · ⭐ ' + Save.data.totalStars;
+    $('progressText').innerHTML =
+      '找糖果：第 ' + Save.maxLevel('find') + ' 关 ⭐' + Save.totalStars('find') +
+      '<br>翻牌配对：第 ' + Save.maxLevel('pair') + ' 关 ⭐' + Save.totalStars('pair');
   }
 
   /* ---------- 7.2b 关卡列表 ---------- */
   function renderLevels() {
-    const maxLv = Save.data.maxLevel;
+    const maxLv = Save.maxLevel();
     const maxChap = chapterOf(maxLv);
     const c = clamp(S.chapView || 1, 1, maxChap);
     S.chapView = c;
@@ -1959,7 +2058,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
   function openLevels() {
     // 从游戏中打开 → 定位到当前正在玩的章节；从首页打开 → 定位到最新章节
-    const base = S.screen === 'game' ? S.level : Save.data.maxLevel;
+    const base = S.screen === 'game' ? S.level : Save.maxLevel();
     S.chapView = chapterOf(base);
     renderLevels();
     $('levelsOverlay').classList.add('show');
@@ -1971,9 +2070,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
   // 从列表进入某一关：已完成/旧关卡 = 补星重玩
   function startFromList(level) {
-    if (level > Save.data.maxLevel) return;
+    if (level > Save.maxLevel()) return;
     closeLevels();
-    S.isReplay = level < Save.data.maxLevel || starsOf(level) > 0;
+    S.isReplay = level < Save.maxLevel() || starsOf(level) > 0;
     S.level = level;
     S.mercy = 0;
     applyTheme(currentTheme());
@@ -2187,11 +2286,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     setBusy(true);
     S.pairsDone = 0;
 
-    // 只有"打到最前面"才推进进度；重玩旧关卡不会把进度倒回去
-    if (S.level > Save.data.maxLevel) {
-      Save.data.maxLevel = S.level;
-      Save.data.level = S.level;
-    }
+    // 只推进当前玩法的进度；重玩旧关卡不会把进度倒回去
+    Save.setMaxLevel(S.level);
     Save.markDirty();
 
     hideOverlays();
@@ -2443,8 +2539,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     const best = Math.max(prevBest, stars);
 
     // 只增不减：重玩同一关取最高星，漏掉的星星随时可以补回来
-    if (best > prevBest) Save.data.starsByLevel[S.level] = best;
-    Save.recalcStars();
+    if (best > prevBest) Save.progress().starsByLevel[S.level] = best;
     Save.markDirty();
 
     Sound.win();
@@ -2500,10 +2595,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     S.level++;
     S.mercy = 0;
     S.isReplay = false;
-    Save.data.level = S.level;
-    Save.data.maxLevel = Math.max(Save.data.maxLevel, S.level);
+    const advanced = Save.setMaxLevel(S.level);
     Save.markDirty();
-    checkUnlock();
+    checkUnlock(advanced);
     startLevel();
   }
 
@@ -2524,14 +2618,14 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   }
 
   /* ---------- 8.12 主题解锁 ---------- */
-  function checkUnlock() {
-    const fresh = CONFIG.themes.filter(
-      (t) => Save.data.maxLevel >= t.unlockLevel && !Save.data.unlocked.includes(t.id)
-    );
-    if (!fresh.length) return;
-    fresh.forEach((t) => Save.data.unlocked.push(t.id));
-    Save.markDirty();
-    showUnlock(fresh[0]);
+  function checkUnlock(advanced) {
+    // 只看当前玩法，且只在这次真的推进了进度时提示：
+    // 重玩已解锁的关卡不会重复弹窗
+    if (!advanced) return;
+    const lv = Save.maxLevel();
+    const theme = CONFIG.themes.find((t) => t.unlockLevel === lv);
+    if (!theme) return;
+    showUnlock(theme);
     Sound.chime();
   }
 
@@ -2605,13 +2699,16 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       }
       // 同步内存状态并回到首页，避免停留在旧的关卡里
       S.mode = Save.data.mode;
-      S.themeId = Save.data.themeId;
+      S.themeId = Save.themeId();
       Sound.setMuted(Save.data.muted);
       goHome();
       updateStorageInfo();
       Sound.resume();
       Sound.chime();
-      showToast('📥', '导入成功', '共 ' + res.totalStars + ' 颗星 · 第 ' + res.maxLevel + ' 关', 5000);
+      const sub = res.addedStars > 0
+        ? ('共 ' + res.totalStars + ' 颗星 · 新补 ' + res.addedStars + ' 颗')
+        : ('共 ' + res.totalStars + ' 颗星 · 已是最新');
+      showToast('📥', '导入成功', sub, 5000);
     };
     reader.onerror = () => showToast('⚠️', '读取失败', '请重试或换个文件', 4000);
     reader.readAsText(file, 'utf-8');
@@ -2652,7 +2749,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     hideOverlays();
     closeLevels();
     S.isReplay = false;
-    S.level = Save.data.maxLevel;  // 回首页后"开始"永远指向最新一关
+    S.level = Save.maxLevel();  // 回首页后"开始"永远指向最新一关
     $('parentOverlay').classList.remove('show');
     applyTheme(currentTheme());
     renderHome();
@@ -2669,10 +2766,20 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       if (!btn) return;
       Sound.resume();
       Sound.pop();
-      S.mode = btn.dataset.mode;
+      const nextMode = btn.dataset.mode;
+      if (nextMode === S.mode) return;
+
+      // 切换玩法：立即载入该玩法自己的关卡进度
+      S.mode = nextMode;
       Save.data.mode = S.mode;
+      S.level = Save.maxLevel();
+      S.themeId = Save.themeId();   // 每种玩法记自己的主题
+      S.isReplay = false;
+      S.mercy = 0;
       Save.markDirty();
+      applyTheme(currentTheme());
       renderHome();
+      updateStorageInfo();
     });
 
     /* 首页：主题 */
@@ -2681,16 +2788,16 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       if (!btn) return;
       const theme = CONFIG.themes.find((t) => t.id === btn.dataset.theme);
       if (!theme) return;
-      if (!Save.data.unlocked.includes(theme.id)) {
+      if (!Save.unlocked().includes(theme.id)) {
         Sound.pop();
-        const left = Math.max(1, theme.unlockLevel - Save.data.maxLevel);
+        const left = Math.max(1, theme.unlockLevel - Save.maxLevel());
         $('homeStats').textContent = '再玩 ' + left + ' 关，就能解锁「' + theme.name + '」啦～';
         return;
       }
       Sound.resume();
       Sound.pop();
       S.themeId = theme.id;
-      Save.data.themeId = theme.id;
+      Save.setTheme(theme.id);
       Save.markDirty();
       applyTheme(theme);
       renderHome();
@@ -2700,11 +2807,11 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     $('startBtn').addEventListener('click', () => {
       Sound.resume();
       Sound.pop();
-      S.level = Save.data.maxLevel;
+      S.level = Save.maxLevel();
       S.isReplay = false;
       S.mercy = 0;                 // 从首页开始 = 全新一关，清掉"减负"状态
       Save.data.mode = S.mode;
-      Save.data.themeId = S.themeId;
+      Save.setTheme(S.themeId);
       Save.markDirty();
       applyTheme(currentTheme());
       switchScreen('game');
@@ -2789,14 +2896,14 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     });
     $('chapNext').addEventListener('click', () => {
       Sound.pop();
-      S.chapView = Math.min(chapterOf(Save.data.maxLevel), S.chapView + 1);
+      S.chapView = Math.min(chapterOf(Save.maxLevel()), S.chapView + 1);
       renderLevels();
     });
     $('levelGrid').addEventListener('click', (e) => {
       const card = e.target.closest('.lv-card');
       if (!card) return;
       const lv = parseInt(card.dataset.level, 10);
-      if (!lv || lv > Save.data.maxLevel) {
+      if (!lv || lv > Save.maxLevel()) {
         Sound.pop();
         return;
       }
@@ -2929,7 +3036,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     muteBtn.textContent = Save.data.muted ? '🔇' : '🔊';
     muteBtn.classList.toggle('is-off', Save.data.muted);
-    $('progressText').textContent = '第 ' + Save.data.maxLevel + ' 关 · ⭐ ' + Save.data.totalStars;
+    $('progressText').innerHTML =
+      '找糖果：第 ' + Save.maxLevel('find') + ' 关 ⭐' + Save.totalStars('find') +
+      '<br>翻牌配对：第 ' + Save.maxLevel('pair') + ' 关 ⭐' + Save.totalStars('pair');
   }
 
   /* ==========================================================
@@ -2946,9 +3055,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     muteBtn = $('muteBtn');
 
     const source = Save.load();
-    S.level = Save.data.maxLevel;
+    S.level = Save.maxLevel();
     S.mode = Save.data.mode;
-    S.themeId = Save.data.themeId;
+    S.themeId = Save.themeId();
     Sound.muted = Save.data.muted;
 
     applyTheme(currentTheme());
@@ -2970,9 +3079,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       if (!env || env.savedAt <= Save.loadedAt) return;
       Save.mergeRaw(env.data, true);
       Save.loadedAt = env.savedAt;
-      S.level = Save.data.maxLevel;
+      S.level = Save.maxLevel();
       S.mode = Save.data.mode;
-      S.themeId = Save.data.themeId;
+      S.themeId = Save.themeId();
       Sound.setMuted(Save.data.muted);
       applyTheme(currentTheme());
       renderHome();
