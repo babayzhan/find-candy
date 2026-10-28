@@ -3117,8 +3117,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     $('nextBtn').innerHTML = S.isReplay ? '返回关卡列表 📋' : '下一关 ▶';
     $('winOverlay').classList.add('show');
-
-    speak(p.t.replace('！', '') + '！得了 ' + Link.score + ' 分');
   }
 
   function linkLose() {
@@ -3333,9 +3331,6 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     Sound.win();
 
     showWin(best, prevBest, stars);
-
-    const p = pick(PRAISE);
-    speak(p.t.replace('！', '') + '！' + (S.mode === 'find' && S.target ? '你找到了' + S.target.n : ''));
   }
 
   function showWin(best, prevBest, earned) {
