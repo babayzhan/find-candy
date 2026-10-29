@@ -66,12 +66,12 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 #screen-home{
   overflow-y:auto;overflow-x:hidden;
   align-items:center;
-  padding:calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));
+  padding:calc(14px + env(safe-area-inset-top)) 18px calc(14px + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling:touch;
 }
 .home-inner{
   width:100%;max-width:460px;margin:auto;
-  display:flex;flex-direction:column;gap:12px;
+  display:flex;flex-direction:column;gap:10px;
 }
 
 .brand{text-align:center;padding-top:4px}
@@ -113,9 +113,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   color:var(--ink-2);
 }
 
-.mascot{position:relative;height:88px;display:grid;place-items:center;margin:2px 0}
+.mascot{position:relative;height:76px;display:grid;place-items:center;margin:0}
 .mascot-candy{
-  font-size:60px;line-height:1;
+  font-size:54px;line-height:1;
   filter:drop-shadow(0 10px 14px rgba(217,79,107,.22));
   animation:float 3.1s ease-in-out infinite;
 }
@@ -164,24 +164,25 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 .mode-desc{font-size:9.8px;line-height:1.3;color:var(--ink-2);text-align:center}
 .mode-desc.is-progress{color:var(--accent-deep);font-weight:800;font-size:10.5px}
 
-.theme-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .theme-chip{
-  display:flex;align-items:center;gap:8px;
-  padding:9px 10px;
-  border-radius:16px;
+  display:flex;align-items:center;gap:6px;
+  padding:8px 8px;
+  border-radius:14px;
   background:#fff;
   border:2.5px solid transparent;
   box-shadow:var(--shadow-sm);
   text-align:left;
+  min-width:0;
   transition:transform .18s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
 }
 .theme-chip:active{transform:scale(.97)}
 .theme-chip.on{border-color:var(--accent);background:var(--accent-soft)}
 .theme-chip.locked{opacity:.62;background:#F7F4F9;box-shadow:none}
-.theme-icon{font-size:20px;line-height:1}
+.theme-icon{font-size:17px;line-height:1;flex:none}
 .theme-text{display:flex;flex-direction:column;min-width:0}
-.theme-text b{font-size:12.5px;font-weight:800;white-space:nowrap}
-.theme-text small{font-size:9px;color:var(--ink-2);line-height:1.4}
+.theme-text b{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.theme-text small{font-size:8.5px;color:var(--ink-2);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .btn-primary{
   display:flex;align-items:center;justify-content:center;gap:6px;
@@ -202,6 +203,31 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   text-align:center;font-size:11.5px;color:var(--ink-2);letter-spacing:.5px;
 }
 
+/* 首页：金币 + 商店 / 图鉴入口 */
+.wallet-row{display:flex;align-items:center;gap:7px}
+.coin-pill{
+  display:flex;align-items:center;gap:5px;
+  padding:8px 13px;border-radius:999px;
+  background:#fff;box-shadow:var(--shadow-sm);
+  font-size:14px;flex:none;
+}
+.coin-pill b{font-size:15px;font-weight:900;color:#D99A1F;letter-spacing:.5px}
+.coin-pill.small{padding:5px 11px;font-size:12px;background:#FFF7E6;border:1.5px solid #FFE3AF;box-shadow:none}
+.coin-pill.small b{font-size:13px}
+.coin-icon{font-size:15px;line-height:1}
+.wallet-btn{
+  flex:1;min-width:0;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:9px 8px;border-radius:999px;
+  font-size:12.5px;font-weight:800;color:#6E5F7D;white-space:nowrap;
+  background:rgba(255,255,255,.9);
+  border:2px solid rgba(160,145,180,.16);
+  box-shadow:var(--shadow-sm);
+  transition:transform .15s ease,background .2s ease;
+}
+.wallet-btn:active{transform:scale(.97);background:#fff}
+.wallet-btn i{font-style:normal;font-size:9.5px;font-weight:700;color:#A79BB3}
+
 .parent-tip{
   margin-top:2px;
   padding:6px 10px 2px;
@@ -218,6 +244,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 .hud-top{display:flex;align-items:center;gap:8px}
 .icon-btn{
   width:42px;height:42px;flex:none;
+  position:relative;
   display:grid;place-items:center;
   font-size:19px;line-height:1;
   border-radius:15px;
@@ -227,6 +254,14 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 }
 .icon-btn:active{transform:scale(.93);background:#fff}
 .icon-btn.is-off{opacity:.6}
+/* 提示次数小角标 */
+.hint-num{
+  position:absolute;top:-3px;right:-3px;
+  min-width:16px;height:16px;padding:0 4px;
+  border-radius:9px;background:#FF8FA3;color:#fff;
+  font-size:10px;font-weight:900;font-style:normal;line-height:16px;
+  box-shadow:0 2px 5px rgba(217,79,107,.35);
+}
 
 .hud-mid{flex:1;text-align:center;min-width:0}
 .hud-level{font-size:15px;font-weight:900;letter-spacing:.5px;line-height:1.25}
@@ -510,6 +545,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   transform:none;
   filter:none;
 }
+/* 兜底矢量图标：尺寸跟随字号，基线对齐 */
+.glyph-svg{width:1em;height:1em;display:inline-block;vertical-align:-.14em}
+.glyph>.glyph-svg{display:block}
 
 /* 状态 */
 .card.matched .face.front{
@@ -608,6 +646,20 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 .cl-label{font-size:9.5px;letter-spacing:2px;color:var(--accent-deep);opacity:.8}
 .cl-main{font-size:16px;font-weight:800;color:var(--ink)}
 .cel-card .btn-primary{position:relative}
+
+/* 结算：金币与图鉴奖励 */
+.cel-reward{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px;
+  margin:-6px 0 16px;position:relative;
+}
+.cel-reward:empty{display:none}
+.cel-reward .rw{
+  padding:5px 11px;border-radius:999px;
+  font-size:11.5px;font-weight:800;letter-spacing:.3px;
+}
+.rw-coin{background:#FFF4DA;color:#B57C10}
+.rw-book{background:#EAF5FF;color:#2F6FA8}
+.rw-none{background:#F4EFF8;color:#8E7FA0;font-weight:600}
 
 /* 通用弹层文案 */
 .sheet-emoji{font-size:42px;line-height:1}
@@ -772,6 +824,67 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 .levels-stat{font-size:11.5px;font-weight:800;color:var(--ink-2);letter-spacing:.5px}
 .btn-ghost.levels-close{width:auto;padding:9px 20px;font-size:12.5px}
 
+/* ---------- 6.5 商店 / 图鉴 ---------- */
+.shop-sheet,.codex-sheet{text-align:left;max-width:380px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheet-h3{font-size:19px;font-weight:900;letter-spacing:.5px}
+.sheet-hint{margin-top:6px;font-size:11px;line-height:1.65;color:var(--ink-2)}
+
+.shop-list{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.shop-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 12px;border-radius:18px;background:#fff;
+  border:2px solid rgba(160,145,180,.13);
+  box-shadow:0 3px 10px rgba(120,90,140,.06);
+}
+.shop-item.maxed{background:#FBF9FD;border-style:dashed}
+.si-icon{font-size:24px;line-height:1;flex:none}
+.si-body{flex:1;min-width:0}
+.si-body b{font-size:13.5px;font-weight:900;display:flex;align-items:center;gap:6px}
+.si-body b em{font-style:normal;font-size:9.5px;font-weight:800;color:var(--accent-deep);background:var(--accent-soft);border-radius:999px;padding:2px 7px}
+.si-body small{display:block;font-size:10px;color:var(--ink-2);line-height:1.5;margin-top:2px}
+.pips{display:flex;gap:4px;margin-top:5px}
+.pips i{width:16px;height:5px;border-radius:3px;background:#EDE7F3;font-style:normal}
+.pips i.on{background:var(--accent)}
+.si-buy{
+  flex:none;min-width:76px;padding:8px 10px;border-radius:999px;
+  font-size:11.5px;font-weight:900;color:#fff;
+  background:linear-gradient(160deg,var(--accent),var(--accent-deep));
+  box-shadow:0 6px 14px -6px rgba(217,79,107,.6);
+  transition:transform .15s ease;
+}
+.si-buy:disabled{background:#EDE7F3;color:#A79BB3;box-shadow:none}
+.si-buy:active:not(:disabled){transform:scale(.96)}
+
+.codex-count{
+  flex:none;font-size:11.5px;font-weight:900;color:var(--accent-deep);
+  background:var(--accent-soft);border-radius:999px;padding:4px 10px;
+}
+.codex-body{
+  margin-top:12px;max-height:54vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding-right:2px;
+}
+.cx-group{margin-bottom:13px}
+.cx-title{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:11.5px;font-weight:900;color:var(--ink-2);letter-spacing:.4px;margin-bottom:6px;
+}
+.cx-title span{font-size:10px;font-weight:700;color:#A79BB3}
+.cx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cx-cell{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:8px 2px 6px;border-radius:13px;
+  background:#fff;border:1.5px solid rgba(160,145,180,.12);
+}
+.cx-icon{font-size:21px;line-height:1.15}
+.cx-name{
+  font-size:9px;color:var(--ink-2);max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.cx-cell.off{background:#F7F4F9;border-style:dashed;border-color:rgba(160,145,180,.2)}
+.cx-cell.off .cx-icon{filter:grayscale(1);opacity:.4}
+.cx-cell.off .cx-name{color:#B3A8BF}
+
 /* 解锁提示 */
 .unlock-toast{
   position:fixed;z-index:95;
@@ -857,18 +970,35 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 /* ---------- 8. 适配 ---------- */
 @media (max-height:700px){
   .mascot{display:none}
-  .home-inner{gap:9px}
+  .home-inner{gap:7px}
   #screen-home{padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   .title{font-size:30px}
-  .panel{padding:11px;gap:6px}
+  .panel{padding:10px;gap:6px}
   .mode-card{padding:8px 6px}
   .mode-icon{font-size:22px}
-  .btn-primary{padding:13px 18px}
+  .btn-primary{padding:12px 16px}
   .parent-tip{padding-top:4px}
+  /* 6 个主题在矮屏用三列，避免首页被顶出滚动条 */
+  .theme-row{grid-template-columns:repeat(3,1fr);gap:6px}
+  .theme-chip{padding:7px 6px;gap:5px;border-radius:13px}
+  .theme-icon{font-size:16px}
+  .theme-text b{font-size:10.5px}
+  .theme-text small{font-size:8px}
+  .wallet-row{gap:6px}
+  .wallet-btn{padding:8px 6px;font-size:11.5px}
+  .coin-pill{padding:7px 10px}
+  .coin-pill b{font-size:14px}
+  .btn-ghost{padding:10px 14px}
+  .save-warn{padding:5px 8px}
+  .save-warn .sw-text{font-size:9.5px}
+  .home-stats{font-size:10.5px}
 }
 @media (max-height:600px){
-  .home-inner{gap:8px}
+  .home-inner{gap:7px}
   .parent-tip{display:none}
+  .title{font-size:27px}
+  .subtitle{display:none}
+  .panel-label{margin-top:0 !important}
 }
 </style>
 </head>
@@ -902,6 +1032,14 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       开始第 <b>1</b> 关 <span class="arrow">▶</span>
     </button>
 
+    <div class="wallet-row">
+      <div class="coin-pill" id="homeCoins" aria-label="金币">
+        <span class="coin-icon">🪙</span><b id="homeCoinNum">0</b>
+      </div>
+      <button class="wallet-btn" id="shopBtn" type="button">🛒 商店</button>
+      <button class="wallet-btn" id="codexBtn" type="button">📖 图鉴<i id="codexNum">0/0</i></button>
+    </div>
+
     <button class="btn-ghost" id="levelsBtn" type="button">
       📋 关卡列表 <span class="ghost-sub" id="levelsBtnSub">已通关 0 关</span>
     </button>
@@ -929,6 +1067,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       <div class="hud-theme" id="hudTheme">水果乐园</div>
     </div>
     <button class="icon-btn" id="muteBtn" type="button" aria-label="声音开关">🔊</button>
+    <button class="icon-btn" id="hintBtn" type="button" aria-label="提示">💡</button>
     <button class="icon-btn" id="pauseBtn" type="button" aria-label="暂停">⏸</button>
   </div>
 
@@ -972,6 +1111,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     <div class="cel-stars" id="celStars"></div>
     <div class="cel-star-note" id="celStarNote"></div>
     <div class="cel-learn" id="celLearn"></div>
+    <div class="cel-reward" id="celReward"></div>
     <button class="btn-primary" id="nextBtn" type="button">下一关 ▶</button>
   </div>
 </div>
@@ -1036,9 +1176,10 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   <div class="sheet-card parent-sheet">
     <h3>👨‍👩‍👧 家长小贴士</h3>
     <p class="parent-note">
-      适龄 <b>4-8 岁</b>。游戏训练<b>图形识别、配对归类与工作记忆</b>，没有时间压力，也不会有"失败"结局——
-      生命值用完只会温柔地重来一次。<br><br>
+      适龄 <b>4-8 岁</b>。游戏训练<b>图形识别、配对归类与工作记忆</b>，前两种玩法没有时间压力，也不会有"失败"结局——
+      生命值用完只会温柔地重来一次；连连看时间到了也会多给一点时间再试。<br><br>
       建议单次游玩 <b>不超过 10 分钟</b>，每关约 20-40 秒。洗牌速度最高 <b>3 倍速</b>，孩子可以用眼睛跟上。<br><br>
+      星星可以换金币，在首页<b>商店</b>里升级生命、洗牌速度与提示次数；过关遇到的图案会自动收进<b>图鉴</b>。<br><br>
       进度<b>自动保存</b>在这台设备的浏览器里，清除浏览器数据会一并清空。换设备或换浏览器时，请先用下面的<b>导出</b>按钮备份。
     </p>
 
@@ -1047,7 +1188,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       <button class="switch" id="switchSound" type="button">开</button>
     </div>
     <div class="setting-row">
-      <div>语音鼓励<small>过关时朗读一句夸奖</small></div>
+      <div>语音提示<small>切换时会试听一句</small></div>
       <button class="switch" id="switchVoice" type="button">开</button>
     </div>
     <div class="setting-row">
@@ -1065,6 +1206,36 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     <div class="parent-actions">
       <button class="btn-primary" id="parentClose" type="button">知道啦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 商店（局外成长） ==================== -->
+<div class="overlay" id="shopOverlay">
+  <div class="sheet-card shop-sheet">
+    <div class="sheet-head">
+      <h3 class="sheet-h3">🛒 商店</h3>
+      <div class="coin-pill small"><span class="coin-icon">🪙</span><b id="shopCoinNum">0</b></div>
+    </div>
+    <p class="sheet-hint">每拿到一颗新星星，就能赚 10 金币。升级永久生效～</p>
+    <div class="shop-list" id="shopList"></div>
+    <div class="sheet-btns">
+      <button class="btn-ghost levels-close" id="shopClose" type="button">返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 图鉴（收集系统） ==================== -->
+<div class="overlay" id="codexOverlay">
+  <div class="sheet-card codex-sheet">
+    <div class="sheet-head">
+      <h3 class="sheet-h3">📖 图鉴</h3>
+      <span class="codex-count" id="codexCount">0 / 0</span>
+    </div>
+    <p class="sheet-hint">过关时遇到的新图案会自动收进图鉴，收集全部就厉害啦～</p>
+    <div class="codex-body" id="codexBody"></div>
+    <div class="sheet-btns">
+      <button class="btn-ghost levels-close" id="codexClose" type="button">返回</button>
     </div>
   </div>
 </div>
@@ -1101,8 +1272,23 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   /* ==========================================================
    * 1. CONFIG —— 游戏配置区（改这里就够了）
    * ========================================================== */
+
+  /* 内置矢量图标：用于个别"新 emoji 在旧系统缺字"的兜底。
+     🫐 属于 Emoji 13（2020），Windows 10、Android 10 及更早系统的字体里没有，
+     会显示成空白框。启动时会做一次字形检测，缺字就换用这段 SVG，保证任何设备都看得见。 */
+  const BERRY_SVG =
+    '<svg class="glyph-svg" viewBox="10 13.5 44 44" width="1em" height="1em" aria-hidden="true" focusable="false">' +
+      '<circle cx="33" cy="30" r="13" fill="#5A67C8"/>' +
+      '<ellipse cx="29" cy="25" rx="4.2" ry="2.6" fill="#A6AEF0" opacity=".8"/>' +
+      '<circle cx="23" cy="44" r="12.5" fill="#4E5CBA"/>' +
+      '<ellipse cx="19" cy="39" rx="3.8" ry="2.4" fill="#9AA4EC" opacity=".75"/>' +
+      '<circle cx="42" cy="45" r="11.5" fill="#6775D8"/>' +
+      '<ellipse cx="38.5" cy="40" rx="3.4" ry="2.2" fill="#AEB6F4" opacity=".75"/>' +
+      '<path d="M33 14 L34.7 18.65 L39.66 18.84 L35.76 21.9 L37.11 26.66 L33 28 L31.3 23.35 L26.34 23.16 L30.24 20.1 L28.89 15.34 Z" fill="#39488F"/>' +
+    '</svg>';
+
   const CONFIG = {
-    version: '2.0.0',
+    version: '3.0.0',
     saveKey: 'tangguo.save.v3',          // 主快照
     saveBackupKey: 'tangguo.save.v3.bak', // 上一次成功快照（影子备份）
     saveCorruptKey: 'tangguo.save.v3.corrupt', // 解析失败的原文，便于排查
@@ -1113,7 +1299,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       find: {
         name: '找糖果',
         icon: '🍬',
-        desc: '记住位置，洗牌后找出来'
+        desc: '记住位置再找出来'
       },
       pair: {
         name: '翻牌配对',
@@ -1150,6 +1336,37 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       starRatio: [0.5, 0.25] // 剩时比例 ≥50% 三星，≥25% 两星
     },
 
+    /* ---------- 局外成长：金币与商店 ----------
+       金币只在"拿到新星"时发放；重玩已满星的关卡不产出，避免刷币。
+       升级项全部走 Save.data.upgrades，读档时按 max 归一化。 */
+    economy: {
+      coinPerStar: 10      // 每颗新星 10 金币
+    },
+
+    upgrades: {
+      hearts: {
+        name: '初始生命',
+        icon: '❤️',
+        max: 2,                 // 3 → 4 → 5 颗心
+        costs: [120, 240],
+        desc: '每级 +1 颗心（最多 5 颗）'
+      },
+      slow: {
+        name: '洗牌减速',
+        icon: '🐢',
+        max: 3,                 // 每级 -10% 速度
+        costs: [90, 160, 230],
+        desc: '洗牌每级慢 10%，最多慢 30%'
+      },
+      hint: {
+        name: '自带提示',
+        icon: '💡',
+        max: 1,
+        costs: [150],
+        desc: '每局开局自带 1 次提示'
+      }
+    },
+
 
     /* ---------- 主题包 ----------
        unlockLevel：达到该关卡时解锁（每 10 关一个新主题）
@@ -1171,7 +1388,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
           { g: '🍇', n: '葡萄' }, { g: '🍉', n: '西瓜' }, { g: '🍌', n: '香蕉' },
           { g: '🍒', n: '樱桃' }, { g: '🍑', n: '桃子' }, { g: '🍐', n: '梨' },
           { g: '🍍', n: '菠萝' }, { g: '🥝', n: '猕猴桃' }, { g: '🥭', n: '芒果' },
-          { g: '🫐', n: '蓝莓' }, { g: '🍋', n: '柠檬' }, { g: '🥥', n: '椰子' },
+          { g: '🫐', n: '蓝莓', fallback: BERRY_SVG }, { g: '🍋', n: '柠檬' }, { g: '🥥', n: '椰子' },
           { g: '🍅', n: '番茄' }
         ]
       },
@@ -1234,6 +1451,42 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
           { g: '🚁', n: '直升机' }, { g: '⛵', n: '帆船' }, { g: '🚤', n: '快艇' },
           { g: '🛵', n: '摩托车' }
         ]
+      },
+      {
+        id: 'ocean',
+        name: '海洋世界',
+        icon: '🐠',
+        unlockLevel: 41,
+        colors: {
+          accent: '#4FC3D9', accent2: '#B7EAF3', deep: '#2A93AD',
+          soft: '#E3F7FB', bg1: '#F2FCFE', bg2: '#EAF6FF'
+        },
+        items: [
+          { g: '🐟', n: '小鱼' }, { g: '🐠', n: '热带鱼' }, { g: '🐡', n: '河豚' },
+          { g: '🦈', n: '鲨鱼' }, { g: '🐙', n: '章鱼' }, { g: '🦀', n: '螃蟹' },
+          { g: '🦞', n: '龙虾' }, { g: '🦐', n: '小虾' }, { g: '🐬', n: '海豚' },
+          { g: '🐳', n: '鲸鱼' }, { g: '🐚', n: '贝壳' }, { g: '🐢', n: '海龟' },
+          { g: '🦑', n: '鱿鱼' }, { g: '🐧', n: '企鹅' }, { g: '⚓', n: '船锚' },
+          { g: '🌊', n: '海浪' }
+        ]
+      },
+      {
+        id: 'space',
+        name: '太空探险',
+        icon: '🚀',
+        unlockLevel: 51,
+        colors: {
+          accent: '#9B8CFF', accent2: '#D4CCFF', deep: '#6A57D6',
+          soft: '#EFEAFF', bg1: '#F8F6FF', bg2: '#F0F4FF'
+        },
+        items: [
+          { g: '🚀', n: '火箭' }, { g: '🛸', n: '飞碟' }, { g: '👽', n: '外星人' },
+          { g: '🌍', n: '地球' }, { g: '🌕', n: '满月' }, { g: '🌙', n: '月亮' },
+          { g: '⭐', n: '星星' }, { g: '🌟', n: '闪星' }, { g: '☄️', n: '彗星' },
+          { g: '🌠', n: '流星' }, { g: '🔭', n: '望远镜' }, { g: '🛰️', n: '卫星' },
+          { g: '🌌', n: '银河' }, { g: '🌞', n: '太阳' }, { g: '✨', n: '闪光' },
+          { g: '💫', n: '星光' }
+        ]
       }
     ],
 
@@ -1273,7 +1526,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       ['初次见面', '小手热身', '眼睛亮亮', '记性真好', '洗牌小旋风', '糖果捉迷藏', '记忆加速', '小侦探出动', '超级大脑', '章节小考'],
       ['森林清晨', '动物排队', '谁藏起来了', '尾巴认亲', '树洞记忆', '迷雾洗牌', '火眼金睛', '记忆小超人', '森林寻宝', '章节小考'],
       ['数字排队', '数一数二', '大小比一比', '数字躲猫猫', '快速洗牌', '找找单数', '数字接力', '记忆计算器', '小小数学家', '章节小考'],
-      ['车库出发', '马路观察', '交通标志', '谁跑得快', '轮子转转', '洗牌高速路', '方向小达人', '交通指挥官', '环城旅行', '章节小考']
+      ['车库出发', '马路观察', '交通标志', '谁跑得快', '轮子转转', '洗牌高速路', '方向小达人', '交通指挥官', '环城旅行', '章节小考'],
+      ['海边拾贝', '鱼群游过', '珊瑚迷阵', '深海寻宝', '浪花洗牌', '贝壳排队', '海豚记忆', '小小潜水员', '海洋博士', '章节小考'],
+      ['火箭发射', '星星点点', '月面漫步', '太空躲猫猫', '失重洗牌', '银河航线', '外星朋友', '宇宙记忆王', '星际旅行', '章节小考']
     ],
 
     // 连连看自己的关卡名（节奏与前两种玩法不同，单独一套）
@@ -1281,7 +1536,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       ['连起两条路', '小手连一连', '转个弯也行', '拐弯小能手', '连线加速', '拐角藏猫猫', '路线规划', '连线小高手', '思路清晰', '章节小考'],
       ['森林连通', '动物对齐', '绕道去找', '穿过树梢', '迷雾连线', '拐三次也行', '路线大师', '连锁消除', '森林通路', '章节小考'],
       ['数字连接', '成双成对', '数数连连', '上下左右', '快速连线', '绕一绕', '连击时刻', '计算路线', '数字高手', '章节小考'],
-      ['车道连通', '一路畅通', '绕行路线', '上下穿行', '高速连线', '拐角加速', '连击车道', '路线指挥', '环城连线', '章节小考']
+      ['车道连通', '一路畅通', '绕行路线', '上下穿行', '高速连线', '拐角加速', '连击车道', '路线指挥', '环城连线', '章节小考'],
+      ['浪花连线', '鱼群成双', '绕过珊瑚', '海底通道', '潮汐加速', '拐弯潜水', '深海连击', '海洋路线', '潜航高手', '章节小考'],
+      ['星际连线', '轨道对接', '绕开陨石', '太空通道', '光速连线', '拐弯飞行', '银河连击', '星际路线', '宇宙指挥官', '章节小考']
     ],
 
     /* ---------- 生命值与容错 ---------- */
@@ -1318,18 +1575,67 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     return a;
   }
 
-  // 卡片的"名字"：🍓 草莓 / 数字 3
-  function label(item) {
-    if (!item) return '';
-    return item.kind === 'num' ? ('数字 ' + item.g) : (item.g + ' ' + item.n);
+  /* ---------- 图标兼容检测 ----------
+     把字符画到 canvas 上，和"一定不存在字形"的码位位图比较：
+     完全一致 = 系统缺这个字形（会显示成空白方框），此时该条目改用 fallback 矢量图。 */
+  let _glyphCtx = null;
+  function glyphSupported(ch) {
+    try {
+      if (!_glyphCtx) {
+        const cv = document.createElement('canvas');
+        cv.width = 72;
+        cv.height = 72;
+        _glyphCtx = cv.getContext('2d', { willReadFrequently: true });
+        if (!_glyphCtx) return true;          // 拿不到 canvas 就按支持处理
+      }
+      const ctx = _glyphCtx;
+      const draw = (text) => {
+        ctx.clearRect(0, 0, 72, 72);
+        ctx.fillStyle = '#000';
+        ctx.font = '64px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 36, 36);
+        return ctx.getImageData(0, 0, 72, 72).data;
+      };
+      const a = draw(ch);
+      const b = draw('\u{10FFFD}');            // 未分配码位 → 缺字字形
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return true;
+      return false;
+    } catch (e) {
+      return true;                             // 检测失败就不折腾，照常显示
+    }
   }
 
-  // 完整名字（庆祝弹窗用，数字带中文读法，强化认知）
+  function resolveIconFallbacks() {
+    CONFIG.themes.forEach((t) => {
+      (t.items || []).forEach((it) => {
+        if (!it.fallback) return;
+        if (!glyphSupported(it.g)) it.useFallback = true;
+      });
+    });
+  }
+
+  // 图标部分（可能是 emoji，也可能是兜底矢量图）
+  function iconHTML(item) {
+    if (!item) return '';
+    return item.useFallback ? item.fallback : item.g;
+  }
+
+  // 卡片的"名字"：🍓 草莓 / 数字 3（纯文本场景：状态栏、aria-label）
+  function label(item) {
+    if (!item) return '';
+    if (item.kind === 'num') return '数字 ' + item.g;
+    if (item.useFallback) return item.n;       // 兜底时不拼 emoji，避免文字里出现空框
+    return item.g + ' ' + item.n;
+  }
+
+  // 完整名字（庆祝弹窗用，走 innerHTML，可以放矢量图）
   function labelFull(item) {
     if (!item) return '';
     return item.kind === 'num'
       ? ('数字 ' + item.g + '（' + item.n + '）')
-      : (item.g + ' ' + item.n);
+      : (iconHTML(item) + ' ' + item.n);
   }
 
   // 鼓励文案
@@ -1357,10 +1663,13 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
    * 存储结构（localStorage，同源）：
    *   tangguo.save.v3  { app, schema, savedAt, data }
    *     data = {
-   *       version: 5,
-   *       mode: 'find' | 'pair',        // 上次玩的玩法（仅偏好）
-   *       themes: { find: 'fruit', pair: 'animal' },  // 每种玩法各记一个主题
+   *       version: 6,
+   *       mode: 'find' | 'pair' | 'link',
+   *       themes: { find: 'fruit', pair: 'animal' },
    *       muted, voice,
+   *       coins,                          // 金币（局外货币）
+   *       upgrades: { hearts, slow, hint },// 商店升级等级
+   *       collection: ['fruit|苹果', ...], // 图鉴：themeId|物品名
    *       modes: {
    *         find: { maxLevel, starsByLevel },   // 找糖果：独立关卡进度
    *         pair: { maxLevel, starsByLevel }    // 翻牌配对：独立关卡进度
@@ -1413,17 +1722,21 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
   function makeDefaultSave() {
     const d = {
-      version: 5,
+      version: 6,
       mode: 'find',
       themes: {},
       muted: false,
       voice: true,
+      coins: 0,
+      upgrades: {},
+      collection: [],
       modes: {}
     };
     Object.keys(CONFIG.modes).forEach((id) => {
       d.modes[id] = emptyModeProgress();
       d.themes[id] = 'fruit';
     });
+    Object.keys(CONFIG.upgrades).forEach((k) => { d.upgrades[k] = 0; });
     return d;
   }
 
@@ -1566,6 +1879,92 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       return true;
     },
 
+    /* ---------------- 金币 / 商店升级 / 图鉴 ---------------- */
+    addCoins(n) {
+      const v = Math.max(0, Math.round(n || 0));
+      if (!v) return 0;
+      this.data.coins = clamp((this.data.coins || 0) + v, 0, 9999999);
+      return v;
+    },
+
+    upgradeLevel(key) {
+      return clamp(parseInt(this.data.upgrades[key], 10) || 0, 0, (CONFIG.upgrades[key] || {}).max || 0);
+    },
+
+    // 下一级价格；已满级返回 null
+    upgradeCost(key) {
+      const cfg = CONFIG.upgrades[key];
+      if (!cfg) return null;
+      const lv = this.upgradeLevel(key);
+      if (lv >= cfg.max) return null;
+      return cfg.costs[lv] || 0;
+    },
+
+    // 购买一级：扣币 + 升级 + 立即落盘；失败时不动任何数据
+    buyUpgrade(key) {
+      const cfg = CONFIG.upgrades[key];
+      if (!cfg) return { ok: false, reason: 'unknown' };
+      const cost = this.upgradeCost(key);
+      if (cost == null) return { ok: false, reason: 'max' };
+      if ((this.data.coins || 0) < cost) return { ok: false, reason: 'coins' };
+      this.data.coins -= cost;
+      this.data.upgrades[key] = this.upgradeLevel(key) + 1;
+      this.markDirty();
+      return { ok: true, cost: cost, level: this.data.upgrades[key] };
+    },
+
+    // 初始生命上限：3 颗 + 商店等级，硬上限 5
+    maxHearts() {
+      return clamp(CONFIG.lives.max + this.upgradeLevel('hearts'), 1, 5);
+    },
+
+    // 洗牌耗时倍数：每级 +10% 时长（等价于速度 -10%，最多 -30%）
+    slowScale() {
+      return 1 + 0.1 * this.upgradeLevel('slow');
+    },
+
+    hasCollected(themeId, item) {
+      return !!item && this.data.collection.indexOf(themeId + '|' + item.n) >= 0;
+    },
+
+    // 收集一件物品；返回 true 表示这次是新解锁
+    collectItem(themeId, item) {
+      if (!item) return false;
+      const key = themeId + '|' + item.n;
+      if (this.data.collection.indexOf(key) >= 0) return false;
+      this.data.collection.push(key);
+      return true;
+    },
+
+    collectionCount() {
+      return this.data.collection.length;
+    },
+
+    collectionTotal() {
+      let n = 0;
+      CONFIG.themes.forEach((t) => { n += (t.items || []).length; });
+      return n;
+    },
+
+    /* ---------------- Steam / 平台接口预留 ----------------
+       NW.js / Electron 包装时在这里接入 Steamworks：
+         unlockAchievement → ISteamUserStats::SetAchievement + StoreStats
+         syncToCloud      → 自有云存档 / Steam Cloud 远端写入
+       现在保持空实现，只做能力探测，不改变游戏逻辑。 */
+    unlockAchievement(achievementId) {
+      if (window.SteamBridge && typeof window.SteamBridge.unlockAchievement === 'function') {
+        try { window.SteamBridge.unlockAchievement(achievementId); return true; } catch (e) { /* 忽略桥接异常 */ }
+      }
+      return false;
+    },
+
+    syncToCloud(data) {
+      if (window.SteamBridge && typeof window.SteamBridge.syncToCloud === 'function') {
+        try { window.SteamBridge.syncToCloud(data); return true; } catch (e) { /* 忽略桥接异常 */ }
+      }
+      return false;
+    },
+
     /* ---------------- 校验 / 归一化 ----------------
        不管数据来自哪里（本机、备份、旧版、导入文件），都从这里过一遍。 */
     normalize(input) {
@@ -1591,12 +1990,35 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
         themes[id] = isThemeUnlocked(want, modes[id].maxLevel) ? want : 'fruit';
       });
 
+      // 升级项：逐项夹到 0..max，坏数据单条丢弃
+      const upgrades = {};
+      Object.keys(CONFIG.upgrades).forEach((k) => {
+        const max = CONFIG.upgrades[k].max;
+        upgrades[k] = clamp(parseInt(raw.upgrades && raw.upgrades[k], 10) || 0, 0, max);
+      });
+
+      // 图鉴：只接受"当前 CONFIG 里真实存在"的键，去重保序
+      const validKeys = {};
+      CONFIG.themes.forEach((t) => {
+        (t.items || []).forEach((it) => { validKeys[t.id + '|' + it.n] = true; });
+      });
+      const collection = [];
+      const seen = {};
+      (Array.isArray(raw.collection) ? raw.collection : []).forEach((k) => {
+        if (typeof k !== 'string' || !validKeys[k] || seen[k]) return;
+        seen[k] = true;
+        collection.push(k);
+      });
+
       return {
-        version: 5,
+        version: 6,
         mode: curMode,
         themes: themes,
         muted: !!raw.muted,
         voice: raw.voice !== false,
+        coins: clamp(parseInt(raw.coins, 10) || 0, 0, 9999999),
+        upgrades: upgrades,
+        collection: collection,
         modes: modes
       };
     },
@@ -1635,6 +2057,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
         if (prev && prev !== raw) this.writeKey(CONFIG.saveBackupKey, prev);
         this.writeKey(CONFIG.saveKey, raw);
         this.afterWrite(env.savedAt);
+        this.syncToCloud(env);        // Steam / 云存档预留位
         return true;
       } catch (e) {
         // 配额不足 / 无痕模式：清掉损坏留证和备份后重试一次
@@ -1643,6 +2066,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
           this.removeKey(CONFIG.saveBackupKey);
           this.writeKey(CONFIG.saveKey, raw);
           this.afterWrite(env.savedAt);
+          this.syncToCloud(env);
           return true;
         } catch (e2) {
           this.failed = true;
@@ -1695,6 +2119,26 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
         this.data.muted = incoming.muted;
         this.data.voice = incoming.voice;
       }
+
+      // 金币取较大值（两个窗口同时消费时不至于把余额抹掉）
+      if ((incoming.coins || 0) > (this.data.coins || 0)) {
+        this.data.coins = incoming.coins;
+        changed = true;
+      }
+      // 升级只升不降
+      Object.keys(CONFIG.upgrades).forEach((k) => {
+        if ((incoming.upgrades[k] || 0) > (this.data.upgrades[k] || 0)) {
+          this.data.upgrades[k] = incoming.upgrades[k];
+          changed = true;
+        }
+      });
+      // 图鉴取并集
+      incoming.collection.forEach((k) => {
+        if (this.data.collection.indexOf(k) < 0) {
+          this.data.collection.push(k);
+          changed = true;
+        }
+      });
       return changed;
     },
 
@@ -1712,7 +2156,12 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
           stars: this.totalStars(),
           cleared: this.clearedCount(),
           find: { maxLevel: this.maxLevel('find'), stars: this.totalStars('find') },
-          pair: { maxLevel: this.maxLevel('pair'), stars: this.totalStars('pair') }
+          pair: { maxLevel: this.maxLevel('pair'), stars: this.totalStars('pair') },
+          link: { maxLevel: this.maxLevel('link'), stars: this.totalStars('link') },
+          coins: this.data.coins,
+          collection: this.collectionCount(),
+          collectionTotal: this.collectionTotal(),
+          upgrades: this.data.upgrades
         },
         data: this.data
       };
@@ -2015,7 +2464,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       L.peek.min, L.peek.max
     );
     const speed = Math.min(L.shuffle.maxSpeed, 1 + (level - 1) * L.shuffle.speedStep);
-    const shuffleDur = Math.max(L.shuffle.minMs, Math.round(L.shuffle.baseMs / speed));
+    // 商店「洗牌减速」：等价于有效速度下降，最多慢 30%（仍受 3 倍速上限约束）
+    const effSpeed = Math.max(0.4, speed / Save.slowScale());
+    const shuffleDur = Math.max(L.shuffle.minMs, Math.round(L.shuffle.baseMs / effSpeed));
     const passCfg = L.shuffle.passes.find((p) => level <= p.upTo) || L.shuffle.passes[L.shuffle.passes.length - 1];
     return {
       cards: tier.cards,
@@ -2060,12 +2511,89 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     $('startBtn').innerHTML = '开始第 <b>' + S.level + '</b> 关 <span class="arrow">▶</span>';
 
+    // 局外成长：金币余额 / 图鉴进度
+    $('homeCoinNum').textContent = Save.data.coins;
+    $('codexNum').textContent = Save.collectionCount() + '/' + Save.collectionTotal();
+
     $('levelsBtnSub').textContent = '已通关 ' + clearedCount() + ' 关';
-    $('homeStats').textContent = '⭐ 已收集 ' + Save.totalStars() + ' 颗星 · 已通关 ' + clearedCount() + ' 关';
+    $('homeStats').textContent = '⭐ 已收集 ' + Save.totalStars() + ' 颗星 · 🪙 ' + Save.data.coins + ' 金币 · 已通关 ' + clearedCount() + ' 关';
 
     $('progressText').innerHTML =
       '找糖果：第 ' + Save.maxLevel('find') + ' 关 ⭐' + Save.totalStars('find') +
-      '<br>翻牌配对：第 ' + Save.maxLevel('pair') + ' 关 ⭐' + Save.totalStars('pair');
+      '<br>翻牌配对：第 ' + Save.maxLevel('pair') + ' 关 ⭐' + Save.totalStars('pair') +
+      '<br>连连看：第 ' + Save.maxLevel('link') + ' 关 ⭐' + Save.totalStars('link') +
+      '<br>🪙 ' + Save.data.coins + ' 金币 · 📖 ' + Save.collectionCount() + '/' + Save.collectionTotal();
+  }
+
+  /* ---------- 7.2c 商店（局外成长） ---------- */
+  function renderShop() {
+    const box = $('shopList');
+    if (!box) return;
+    $('shopCoinNum').textContent = Save.data.coins;
+
+    box.innerHTML = Object.keys(CONFIG.upgrades).map((key) => {
+      const cfg = CONFIG.upgrades[key];
+      const lv = Save.upgradeLevel(key);
+      const maxed = lv >= cfg.max;
+      const cost = Save.upgradeCost(key);
+      const afford = cost != null && Save.data.coins >= cost;
+
+      let pips = '';
+      for (let i = 0; i < cfg.max; i++) pips += '<i class="' + (i < lv ? 'on' : '') + '"></i>';
+
+      const btn = maxed
+        ? '<button class="si-buy" type="button" disabled>已满级</button>'
+        : '<button class="si-buy" type="button" data-buy="' + key + '"' + (afford ? '' : ' disabled') + '>🪙 ' + cost + '</button>';
+
+      return '<div class="shop-item' + (maxed ? ' maxed' : '') + '">' +
+        '<div class="si-icon">' + cfg.icon + '</div>' +
+        '<div class="si-body">' +
+          '<b>' + cfg.name + '<em>Lv.' + lv + ' / ' + cfg.max + '</em></b>' +
+          '<small>' + cfg.desc + '</small>' +
+          '<div class="pips">' + pips + '</div>' +
+        '</div>' + btn + '</div>';
+    }).join('');
+  }
+
+  function openShop() {
+    renderShop();
+    $('shopOverlay').classList.add('show');
+  }
+
+  function closeShop() {
+    $('shopOverlay').classList.remove('show');
+  }
+
+  /* ---------- 7.2d 图鉴（收集系统） ---------- */
+  function renderCodex() {
+    const body = $('codexBody');
+    if (!body) return;
+    $('codexCount').textContent = Save.collectionCount() + ' / ' + Save.collectionTotal();
+
+    body.innerHTML = CONFIG.themes.map((t) => {
+      const items = t.items || [];
+      const got = items.filter((it) => Save.hasCollected(t.id, it)).length;
+      const cells = items.map((it) => {
+        const has = Save.hasCollected(t.id, it);
+        return '<div class="cx-cell' + (has ? '' : ' off') + '">' +
+          '<span class="cx-icon">' + (has ? iconHTML(it) : '❓') + '</span>' +
+          '<span class="cx-name">' + (has ? it.n : '？') + '</span>' +
+        '</div>';
+      }).join('');
+      return '<div class="cx-group">' +
+        '<div class="cx-title">' + t.icon + ' ' + t.name + '<span>' + got + ' / ' + items.length + '</span></div>' +
+        '<div class="cx-grid">' + cells + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function openCodex() {
+    renderCodex();
+    $('codexOverlay').classList.add('show');
+  }
+
+  function closeCodex() {
+    $('codexOverlay').classList.remove('show');
   }
 
   /* ---------- 7.2b 关卡列表 ---------- */
@@ -2163,7 +2691,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       targetChip.classList.remove('hidden');
       progressChip.classList.add('hidden');
       targetChip.innerHTML = '<span class="chip-label">找到</span>' +
-        '<span class="chip-main">' + label(S.target) + '</span>';
+        '<span class="chip-main">' + labelIcon(S.target) + '</span>';
     } else if (S.mode === 'pair') {
       targetChip.classList.add('hidden');
       progressChip.classList.remove('hidden');
@@ -2189,16 +2717,27 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       return;
     }
     heartsEl.classList.remove('hidden');
+    const cap = Save.maxHearts();
     let html = '';
-    for (let i = 0; i < CONFIG.lives.max; i++) {
+    for (let i = 0; i < cap; i++) {
       const on = i < S.hearts;
       html += '<span class="heart' + (on ? '' : ' off') + '">❤️</span>';
     }
     heartsEl.innerHTML = html;
   }
 
+  // 提示按钮：显示剩余次数，没次数时置灰
+  function renderHintBtn() {
+    const btn = $('hintBtn');
+    if (!btn) return;
+    const n = Math.max(0, S.hintCharges | 0);
+    btn.innerHTML = '💡' + (n > 0 ? '<i class="hint-num">' + n + '</i>' : '');
+    btn.classList.toggle('is-off', n <= 0 || S.busy);
+    btn.setAttribute('aria-label', n > 0 ? ('提示，还剩 ' + n + ' 次') : '没有提示次数了');
+  }
+
   function updateHearts(delta) {
-    S.hearts = clamp(S.hearts + delta, 0, CONFIG.lives.max);
+    S.hearts = clamp(S.hearts + delta, 0, Save.maxHearts());
     renderHearts();
     const idx = delta < 0 ? S.hearts : S.hearts - 1; // 失去的那颗 / 补回的那颗
     const node = heartsEl.children[idx];
@@ -2214,6 +2753,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     S.busy = v;
     const btn = $('pauseBtn');
     if (btn) btn.classList.toggle('is-off', v);
+    renderHintBtn();
   }
 
   function setStatus(text) {
@@ -2274,7 +2814,13 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     if (item.kind === 'num') {
       return '<span class="glyph num" style="color:' + item.color + '">' + item.g + '</span>';
     }
-    return '<span class="glyph">' + item.g + '</span>';
+    return '<span class="glyph">' + iconHTML(item) + '</span>';
+  }
+
+  // 带图标的短名字（HUD 胶囊用，走 innerHTML）
+  function labelIcon(item) {
+    if (!item) return '';
+    return item.kind === 'num' ? ('数字 ' + item.g) : (iconHTML(item) + ' ' + item.n);
   }
 
   function renderBoard(cards) {
@@ -2362,8 +2908,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   async function startLevel() {
     const token = ++S.runToken;
 
-    S.hearts = CONFIG.lives.max;
-    S.hintCharges = 0;
+    S.hearts = Save.maxHearts();
+    S.hintCharges = Save.upgradeLevel('hint') > 0 ? 1 : 0;
     S.firstCard = null;
     setBusy(true);
     S.pairsDone = 0;
@@ -2378,6 +2924,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     if (S.mode === 'link') {
       switchBoard('link');
       renderHearts();
+      renderHintBtn();
       await linkStartLevel(token);   // 内部生成棋盘后再刷新 HUD
       return;
     }
@@ -2388,6 +2935,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     renderBoard(cards);
     renderHUD();
     renderHearts();
+    renderHintBtn();
 
     setStatus(S.mode === 'find' ? '准备记住位置啦～' : '准备开始配对～');
     await sleep(300);
@@ -3075,6 +3623,18 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     });
   }
 
+  // 整盘用过的图案（图鉴收集用；消除后仍保留 item 引用）
+  function linkItems() {
+    const out = [];
+    for (let r = 1; r <= Link.rows; r++) {
+      for (let c = 1; c <= Link.cols; c++) {
+        const cell = Link.grid[r][c];
+        if (cell && cell.item) out.push(cell.item);
+      }
+    }
+    return out;
+  }
+
   /* ---------- 胜利 / 失败 ---------- */
   function linkWin() {
     Link.running = false;
@@ -3090,7 +3650,14 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     const prevBest = starsOf(S.level);
     const best = Math.max(prevBest, stars);
     if (best > prevBest) Save.progress().starsByLevel[S.level] = best;
+
+    // 局外奖励：新增星 → 金币；整盘图案 → 图鉴
+    const newStars = Math.max(0, best - prevBest);
+    const coins = Save.addCoins(newStars * CONFIG.economy.coinPerStar);
+    const newItems = collectDrawnItems(linkItems());
+
     Save.markDirty();
+    checkAchievements(S.level);
 
     Sound.win();
 
@@ -3114,6 +3681,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     $('celLearn').innerHTML =
       '<span class="cl-label">本关得分</span>' +
       '<span class="cl-main">' + Link.score + ' 分（剩时奖励 ' + timeBonus + '）</span>';
+
+    renderWinReward(coins, newItems);
 
     $('nextBtn').innerHTML = S.isReplay ? '返回关卡列表 📋' : '下一关 ▶';
     $('winOverlay').classList.add('show');
@@ -3244,11 +3813,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
   async function pairTap(card) {
     if (!S.firstCard) {
       S.firstCard = card;
-      // 有提示次数时：首张牌翻开后，让它的"另一半"发光
-      if (S.hintCharges > 0) {
-        S.hintCharges--;
-        pulsePartner(card, 1900);
-      }
+      // 提示改为玩家主动按 💡 使用（次数见 HUD），不再自动消耗
       return;
     }
 
@@ -3286,6 +3851,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     Sound.wrong();
     updateHearts(-1);
     S.hintCharges = Math.min(3, S.hintCharges + 1);
+    renderHintBtn();
     setStatus('这两张不一样，再看看～');
 
     await sleep(680);
@@ -3315,25 +3881,93 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     S.hintTimer = setTimeout(() => partner.el.classList.remove('hint'), ms);
   }
 
+  /* 玩家主动使用一次提示：三种玩法同一入口，次数由 S.hintCharges 管 */
+  function useHint() {
+    if (S.busy || S.hintCharges <= 0) return;
+    if (S.mode === 'link' && (!Link.running || Link.paused)) return;
+
+    S.hintCharges--;
+    renderHintBtn();
+    Sound.pop();
+
+    if (S.mode === 'find') {
+      pulseTarget(3000);
+      setStatus('看这里～它躲在这儿');
+      return;
+    }
+
+    if (S.mode === 'pair') {
+      if (S.firstCard) {
+        pulsePartner(S.firstCard, 2400);
+      } else {
+        const rest = S.cards.filter((c) => !c.matched);
+        const a = rest[0];
+        const b = a && rest.find((c) => c !== a && c.pairId === a.pairId);
+        if (a && a.el) a.el.classList.add('hint');
+        if (b && b.el) b.el.classList.add('hint');
+        clearTimeout(S.hintTimer);
+        S.hintTimer = setTimeout(() => {
+          if (a && a.el) a.el.classList.remove('hint');
+          if (b && b.el) b.el.classList.remove('hint');
+        }, 2400);
+      }
+      setStatus('这两张是一对哦～');
+      return;
+    }
+
+    linkHint();
+    setStatus('看这两张，能连起来～');
+  }
+
   /* ---------- 8.10 过关 ---------- */
+  // 本关实际出现过的图案（图鉴收集用）
+  function levelItems() {
+    if (S.mode === 'pair') return S.pairItems || [];
+    return (S.cards || []).map((c) => c.item);
+  }
+
+  function collectDrawnItems(items) {
+    const added = [];
+    (items || []).forEach((it) => {
+      if (Save.collectItem(S.themeId, it)) added.push(it);
+    });
+    return added;
+  }
+
+  // 通关里程碑：预留给 Steam 成就（10 / 30 / 50 关）
+  function checkAchievements(level) {
+    if (level === 10) Save.unlockAchievement('clear_chapter_1');
+    else if (level === 30) Save.unlockAchievement('clear_chapter_3');
+    else if (level === 50) Save.unlockAchievement('clear_chapter_5');
+  }
+
   function winLevel() {
     setBusy(true);
     S.mercy = 0;
 
-    const stars = S.hearts >= 3 ? 3 : (S.hearts === 2 ? 2 : 1);
+    // 星级按"相对当前生命上限的损失"计算：升级到 5 心也不能白拿三星
+    const cap = Save.maxHearts();
+    const stars = S.hearts >= cap ? 3 : (S.hearts >= cap - 1 ? 2 : 1);
     const prevBest = starsOf(S.level);
     const best = Math.max(prevBest, stars);
 
     // 只增不减：重玩同一关取最高星，漏掉的星星随时可以补回来
     if (best > prevBest) Save.progress().starsByLevel[S.level] = best;
+
+    // 局外奖励：只按本次新增的星发币，满星重玩不再产出
+    const newStars = Math.max(0, best - prevBest);
+    const coins = Save.addCoins(newStars * CONFIG.economy.coinPerStar);
+    const newItems = collectDrawnItems(levelItems());
+
     Save.markDirty();
+    checkAchievements(S.level);
 
     Sound.win();
 
-    showWin(best, prevBest, stars);
+    showWin(best, prevBest, stars, coins, newItems);
   }
 
-  function showWin(best, prevBest, earned) {
+  function showWin(best, prevBest, earned, coins, newItems) {
     const p = pick(PRAISE);
     $('celEmoji').textContent = p.e;
     $('celTitle').textContent = p.t;
@@ -3367,8 +4001,25 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
         '<span class="cl-main">' + names + (S.pairItems.length > 3 ? ' …' : '') + '</span>';
     }
 
+    renderWinReward(coins, newItems);
+
     $('nextBtn').innerHTML = S.isReplay ? '返回关卡列表 📋' : '下一关 ▶';
     $('winOverlay').classList.add('show');
+  }
+
+  // 结算弹窗里的"金币 / 图鉴"奖励行
+  function renderWinReward(coins, newItems) {
+    const box = $('celReward');
+    if (!box) return;
+    let html = '';
+    html += coins > 0
+      ? '<span class="rw rw-coin">🪙 +' + coins + ' 金币</span>'
+      : '<span class="rw rw-none">🪙 满星啦，本关不再产出金币</span>';
+    if (newItems && newItems.length) {
+      html += '<span class="rw rw-book">📖 图鉴 +' + newItems.length + '</span>';
+    }
+    box.innerHTML = html;
+    box.classList.toggle('has-reward', !!(newItems && newItems.length));
   }
 
   function nextLevel() {
@@ -3527,7 +4178,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
   /* ---------- 8.14 通用弹层 ---------- */
   function hideOverlays() {
-    ['winOverlay', 'rescueOverlay', 'pauseOverlay', 'levelsOverlay'].forEach((id) => $(id).classList.remove('show'));
+    ['winOverlay', 'rescueOverlay', 'pauseOverlay', 'levelsOverlay', 'shopOverlay', 'codexOverlay']
+      .forEach((id) => $(id).classList.remove('show'));
   }
 
   function goHome() {
@@ -3725,6 +4377,62 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       Sound.pop();
       openLevels();
     });
+
+    /* ---------- 商店 / 图鉴 ---------- */
+    $('shopBtn').addEventListener('click', () => {
+      Sound.resume();
+      Sound.pop();
+      openShop();
+    });
+    $('codexBtn').addEventListener('click', () => {
+      Sound.resume();
+      Sound.pop();
+      openCodex();
+    });
+    $('shopClose').addEventListener('click', () => {
+      Sound.pop();
+      closeShop();
+    });
+    $('codexClose').addEventListener('click', () => {
+      Sound.pop();
+      closeCodex();
+    });
+    $('shopOverlay').addEventListener('click', (e) => {
+      if (e.target === $('shopOverlay')) closeShop();
+    });
+    $('codexOverlay').addEventListener('click', (e) => {
+      if (e.target === $('codexOverlay')) closeCodex();
+    });
+
+    /* 购买升级：扣币后立即 Save，界面同步刷新 */
+    $('shopList').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-buy]');
+      if (!btn) return;
+      const key = btn.dataset.buy;
+      const cfg = CONFIG.upgrades[key];
+      if (!cfg) return;
+      const res = Save.buyUpgrade(key);
+      if (!res.ok) {
+        Sound.wrong();
+        return;
+      }
+      Sound.resume();
+      Sound.correct();
+      renderShop();
+      renderHome();
+      showToast(cfg.icon, cfg.name + ' 升到 Lv.' + res.level, '花费 ' + res.cost + ' 金币 · 剩余 ' + Save.data.coins, 3600);
+    });
+
+    /* 游戏中：主动提示 */
+    $('hintBtn').addEventListener('click', () => {
+      Sound.resume();
+      if (S.hintCharges <= 0) {
+        Sound.pop();
+        setStatus('提示用完啦，去首页商店可以升级～');
+        return;
+      }
+      useHint();
+    });
     $('levelsClose').addEventListener('click', () => {
       Sound.pop();
       closeLevels();
@@ -3836,6 +4544,8 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       syncSettingsUI();
       $('parentOverlay').classList.remove('show');
       closeLevels();
+      closeShop();
+      closeCodex();
       switchScreen('home');
       setStatus('进度已重置');
       S.runToken++;
@@ -3878,7 +4588,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     muteBtn.classList.toggle('is-off', Save.data.muted);
     $('progressText').innerHTML =
       '找糖果：第 ' + Save.maxLevel('find') + ' 关 ⭐' + Save.totalStars('find') +
-      '<br>翻牌配对：第 ' + Save.maxLevel('pair') + ' 关 ⭐' + Save.totalStars('pair');
+      '<br>翻牌配对：第 ' + Save.maxLevel('pair') + ' 关 ⭐' + Save.totalStars('pair') +
+      '<br>连连看：第 ' + Save.maxLevel('link') + ' 关 ⭐' + Save.totalStars('link') +
+      '<br>🪙 ' + Save.data.coins + ' 金币 · 📖 ' + Save.collectionCount() + '/' + Save.collectionTotal();
   }
 
   /* ==========================================================
@@ -3900,6 +4612,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
     S.themeId = Save.themeId();
     Sound.muted = Save.data.muted;
 
+    // 先做一次图标缺字检测（只跑一次），再渲染任何牌面
+    resolveIconFallbacks();
+
     applyTheme(currentTheme());
     renderHome();
     renderHearts();
@@ -3908,7 +4623,7 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
 
     // 主存档坏了、从备份恢复时，明确告诉家长
     if (source === 'backup') {
-      setTimeout(() => showToast('🛟', '已从备份恢复', '主存档读取失败，已用上一次备份继续', 6000), 900);
+      setTimeout(() => showToast('♻️', '已从备份恢复', '主存档读取失败，已用上一次备份继续', 6000), 900);
     }
 
     // 多标签页：另一个窗口写了新进度 → 合并进来，不覆盖
@@ -3946,7 +4661,17 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-we
       Save: Save,
       Link: Link,
       anyPair: () => Link.findAnyPair(),
-      path: (a, b) => Link.findPath(a, b)
+      path: (a, b) => Link.findPath(a, b),
+      // V3 自测出口
+      openShop: openShop,
+      openCodex: openCodex,
+      renderShop: renderShop,
+      renderCodex: renderCodex,
+      startLevel: startLevel,
+      winLevel: winLevel,
+      linkWin: linkWin,
+      useHint: useHint,
+      difficulty: difficulty
     };
   }
 
